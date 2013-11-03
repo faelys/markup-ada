@@ -1,0 +1,47 @@
+with "../natools/natools";
+
+project Markup is
+   --  Source_Dirs is left to default "."
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Main use ("markdown.adb");
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnatafnovy",
+            --  a: assersions enabled
+            --  f: full errors (verbose details and all undefined references)
+            --  n: enable pragma Inline
+            --  o: overflow checking
+            --  v: verbose mode
+            --  y: enable default style checks, currently equivalent to:
+            --     3: 3-space indentation
+            --     a: attribute casing
+            --     b: no blanks at end of lines
+            --     c: comment format
+            --     e: end/exit labels
+            --     f: no form feed or vertical tab
+            --     h: no horizontal tab
+            --     i: if-then layout
+            --     k: casing rules for keywords
+            --     l: reference manual layout
+            --     m: line lgnth <= 79 characters
+            --     n: casing of package Standard identifiers
+            --     p: pragma casing
+            --     r: casing for identifier references
+            --     s: presence of subprogram specs
+            --     t: token separation rules
+         "-gnateE",
+            --  generate extra information in exception messages
+         "-gnatwae",
+            --  a: turn on most warnings
+            --  e: treat all warnings as errors
+         "-fstack-check",
+         "-O3");
+   end Compiler;
+
+   package Linker is
+      for Default_Switches ("Ada") use ("-O3");
+   end Linker;
+end Markup;
