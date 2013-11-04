@@ -1,10 +1,25 @@
 with "../natools/natools";
 
 project Markup is
-   --  Source_Dirs is left to default "."
+   type Build_Type is ("Release", "Coverage");
+   Mode : Build_Type := external ("MODE", "Release");
+
+   Prefix := "";
+   Extra_Switches := ();
+
+   case Mode is
+      when "Release" =>
+         Prefix := "";
+         Extra_Switches := ("-O3");
+      when "Coverage" =>
+         Prefix := "coverage/";
+         Extra_Switches :=
+           ("-g", "-O0", "-fprofile-arcs", "-ftest-coverage");
+   end case;
+
    for Source_Dirs use ("src");
-   for Object_Dir use "obj";
-   for Exec_Dir use "bin";
+   for Object_Dir use Prefix & "obj";
+   for Exec_Dir use Prefix & "bin";
    for Main use ("markdown.adb");
 
    package Compiler is
@@ -37,11 +52,11 @@ project Markup is
          "-gnatwae",
             --  a: turn on most warnings
             --  e: treat all warnings as errors
-         "-fstack-check",
-         "-O3");
+         "-fstack-check")
+        & Extra_Switches;
    end Compiler;
 
    package Linker is
-      for Default_Switches ("Ada") use ("-O3");
+      for Default_Switches ("Ada") use Extra_Switches;
    end Linker;
 end Markup;
