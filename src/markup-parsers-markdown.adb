@@ -751,6 +751,13 @@ package body Markup.Parsers.Markdown is
             return;
          end if;
 
+         N := Text.Index (Tools.Blanks, Position, Ada.Strings.Outside);
+         if N = 0 then
+            return;
+         else
+            Position := N;
+         end if;
+
          N := Text.Index (Tools.Eols, Position);
          if N = 0 then
             N := Text.Last;
