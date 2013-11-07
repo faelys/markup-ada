@@ -1,0 +1,44 @@
+# Indentation
+
+No indentation yields a normal paragraph.
+
+ One space indentation also yields a normal paragraph.
+
+  Two-space indentation is still a normal paragraph.
+
+   Three-space indentation is on the edge but still a normal paragraph.
+
+    Four-space indentation switches to code block.
+
+	One-tab indentation is also a code block.
+
+# Fuzzy ATX headers
+
+These are not ATX headers but match some of the parsing steps:
+
+###
+
+###   
+
+###  ###
+
+########
+
+# Fuzzy HTML comments
+
+None of those are valid HTML tags or comments:
+
+<
+
+<!
+
+<!-
+
+Following is an invalid HTML comment that is still accepted as such by
+the parser.
+
+<!-- -- -->
+
+# Footer
+
+Footer to prevent wierd stuff with temporarily-last lines.

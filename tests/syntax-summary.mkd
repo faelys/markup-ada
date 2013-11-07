@@ -1,0 +1,110 @@
+Block-level elements
+====================
+
+Block-level elements are generally separated by one or more blank lines.
+Unmarked blocks are treated as paragraphs.
+
+> Block quotes are marked by greater-than signs (`>`)
+> like e-mail quotes.
+
+Lists are a sequence of items preceeded by a marker. For bulleted lists,
+allowed markers are:
+
+- dash (`-`),
++ plus (`+`),
+* star (`*`).
+
+For numbered lists, any numbers followed by a dot (`.`) and a space:
+
+1. first item,
+1. second item,
+42. third item.
+
+Also both kind of lists can contain span-level items, like lists above,
+or block-level items, like this :
+
+* First block.
+
+* Second block.
+
+* Last block.
+
+3. The same things for numbered lists.
+
+2. The same things for numbered lists.
+
+Code blocks are unmarked indented blocks, however some blocks consider
+indentation as succession (e.g. list items).
+
+    So this
+	is a
+    code block.
+
+<div>
+  <p>Raw HTML blocks are also available. No markdown interpretation is
+performed here.</p>
+</div>
+
+<!-- HTML comments are also considered as blocks. -->
+
+## Atx-style level-two header
+
+Starting with hash sybmols (`#`).
+
+Setext-style level-two header
+-----------------------------
+
+Underlined with dashes (`-`) or equal signs (`=`) for first level.
+
+# Span-level elements
+
+Code spans are marked by any symmetric number of consecutive backticks
+(`` ` ``) and space-trimmed. This allows nesting backticks inside code spans
+without escaping (e.g. ``` `` ` `` ```).
+
+Simple *emphasis* is marked by stars (`*`) or underscores (`_`), with the
+caveat an opening marker cannot be followed by a blank and a closing marker
+cannot follow a blank. Note thereforce that stars and underscores inside
+words are considered as valid marker for any end (however words containing
+underscores usually belong to code spans anyway).
+
+**Double** __emphasis__ and ***triple*** ___emphasis___ work similarly.
+Note that in official Markdown specification, triple emphasis is merely simple
+and double emphasis nested together, they are considered a separate entity
+here to remove the ambiguity of nesting order.
+
+HTML &#x65;ntities are part of Markdown specification, so they have a
+dedicated parser element so they can be handled correctly by non-HTML
+renderers.
+
+Backslashes (`\`) quote the following character, so that litteral \` backticks
+or \* stars can be inserted in a text.
+
+# Hypertext links
+
+Technically, inline images are a special kind of hypertext link, that follow
+the same syntax after an exclamation mark (`!`).
+
+The text of a link and the alt-text of an image are marked by brackets
+(`[` … `]`), and the linked URL or image URL follow in any of the ways
+described blow.
+
+Inline links provide the URL directly between parentheses (`(` … `)`):
+[text link](http://example.com/)
+
+Reference links use a reference between brackets (`[` … `]`) and a separate
+element specifies the URL for each reference.
+[text link][ref]
+
+[ref]: http://example.com/
+
+Short-cut links are like an empty reference, and use the link/alt text as a
+reference:  [text link][]
+
+[text link]: http://example.com/
+
+Also any time a URL is provided, it can also be followed by an optional
+title, between simple quotes (`'`) or double quotes (`"`):
+[text link](http://example.com/ "title text").
+
+![alt text](http://example.com/image.png "title text")
