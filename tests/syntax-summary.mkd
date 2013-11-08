@@ -94,9 +94,14 @@ Inline links provide the URL directly between parentheses (`(` … `)`):
 
 Reference links use a reference between brackets (`[` … `]`) and a separate
 element specifies the URL for each reference.
-[text link][ref]
+[text link][ref1]
 
-[ref]: http://example.com/
+[ref1]: http://example.com/
+
+Note that references are case insensistive (though currenly only ASCII
+case-folding is implemented), so [this also links to ref1][REF1]. Similarly
+white sequences are folded too, so [this links to `text link`][  TEXT
+  LINK  ].
 
 Short-cut links are like an empty reference, and use the link/alt text as a
 reference:  [text link][]
@@ -108,3 +113,14 @@ title, between simple quotes (`'`) or double quotes (`"`):
 [text link](http://example.com/ "title text").
 
 ![alt text](http://example.com/image.png "title text")
+
+Moreover, an URL can be enclosed in angle brackets (`<` … `>`) like
+[in this reference][ref2] or [inline](<http://example.com/>).
+
+[ref2]: <http://example.com/>
+
+The title in a reference entry can be on the next line with an indentation,
+[like in this reference][ref3].
+
+[ref3]: http://example.com/
+	"title text"
