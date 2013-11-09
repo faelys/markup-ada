@@ -124,3 +124,6 @@ The title in a reference entry can be on the next line with an indentation,
 
 [ref3]: http://example.com/
 	"title text"
+
+Autolinks are a URL inserted directly into the text, surrounded by
+angle bracks (`<` … `>`), like <http://example.com>.

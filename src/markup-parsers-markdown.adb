@@ -262,6 +262,15 @@ package body Markup.Parsers.Markdown is
    end Shortlex_Icase_Less_Than;
 
 
+   function Standard_Schemes return String_Sets.Set is
+      Result : String_Sets.Set;
+   begin
+      Result.Insert ("http");
+      Result.Insert ("https");
+      Result.Insert ("ftp");
+      Result.Insert ("");
+      return Result;
+   end Standard_Schemes;
 
 
 
@@ -433,6 +442,20 @@ package body Markup.Parsers.Markdown is
          Backend => Element_Holders.To_Holder (Element),
          Level_Max => Level_Max));
    end Setext_Header;
+
+
+   procedure Auto_Link
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class;
+      Allowed_Schemes : in String_Sets.Set := Standard_Schemes) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Spans.Add_Tokenizer
+        ('<',
+         Tokenizers.Auto_Link'(Parser.Ref,
+                               Element_Holders.To_Holder (Element),
+                               Allowed_Schemes));
+   end Auto_Link;
 
 
    procedure Code_Span
@@ -1469,6 +1492,88 @@ package body Markup.Parsers.Markdown is
       -----------------------------
       -- Span element tokenizers --
       -----------------------------
+
+      procedure Process
+        (Object : in out Auto_Link;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         Text_First : constant Positive := Text.First;
+         Opener : constant Character := Text.Element (Text_First);
+         Closer : constant Character
+           := Maps.Value (Tools.Delimiter_Pairs, Opener);
+         Closer_Set : constant Maps.Character_Set := Maps.To_Set (Closer);
+
+         Link_First : constant Natural := Text.Next (Text_First);
+
+         Position : Positive;
+         N : Natural;
+      begin
+         if Link_First = 0 then
+            return;
+         end if;
+
+         --  Look for double-slash separator
+
+         N := Text.Index (Maps.To_Set ('/'), Link_First);
+         if N = 0 then
+            return;
+         end if;
+
+         Position := N;
+         N := Text.Next (Position);
+         if N = 0 or else Text.Element (N) /= '/' then
+            return;
+         end if;
+
+         --  Check whether the scheme is allowed
+
+         if Position = Link_First then
+            if not Object.Schemes.Contains ("") then
+               return;
+            end if;
+         else
+            N := Text.Previous (Position);
+            if Text.Element (N) /= ':' then
+               return;
+            end if;
+
+            if not Object.Schemes.Contains
+              (Text.To_String (Link_First, Text.Previous (N)))
+            then
+               return;
+            end if;
+         end if;
+
+         --  Look for end of link
+
+         N := Text.Index (Closer_Set, Position);
+         if N = 0 then
+            return;
+         end if;
+
+         Position := Text.Previous (N);
+
+         --  Process the element
+
+         declare
+            Link_Text : Sets.Slice_Set := Text.Subset (Link_First, Position);
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            Remove_Escape (Link_Text);
+            if Element in With_Link'Class then
+               Set_Link (With_Link'Class (Element), Link_Text.To_Slice);
+            end if;
+
+            Element.Open;
+            Element.Append (Link_Text.To_String);
+            Element.Close;
+         end;
+
+         --  Clean up processed range
+
+         Text.Exclude_Slice (Text_First, N);
+      end Process;
+
 
       procedure Process
         (Object : in out Code_Span;

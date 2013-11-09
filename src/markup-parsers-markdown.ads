@@ -71,6 +71,9 @@ package Markup.Parsers.Markdown is
 
    function Html4_Block_Tags return String_Sets.Set;
 
+   function Standard_Schemes return String_Sets.Set;
+      --  HTTP, HTTPS, FTP and empty (schemeless links)
+
 
    --  Block elements
 
@@ -114,6 +117,11 @@ package Markup.Parsers.Markdown is
 
 
    --  Span elements
+
+   procedure Auto_Link
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class;
+      Allowed_Schemes : in String_Sets.Set := Standard_Schemes);
 
    procedure Code_Span
      (Parser : in out Markdown_Parser;
@@ -255,6 +263,13 @@ private
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
 
+
+      type Auto_Link is new Base with record
+         Schemes : String_Sets.Set;
+      end record;
+      procedure Process
+        (Object : in out Auto_Link;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
       type Code_Span is new Base with null record;
       procedure Process
