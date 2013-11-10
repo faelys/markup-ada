@@ -57,6 +57,7 @@ begin
    Parser.Image (Renderer.Image);
    Parser.Link (Renderer.Anchor);
    Parser.Auto_Link (Renderer.Anchor);
+   Parser.Html_Span (Renderer.Raw_Html_Span);
 
    Read_Text : declare
       use Ada.Streams;

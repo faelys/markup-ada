@@ -253,6 +253,52 @@ package body Markup.Parsers.Markdown is
    end Html4_Block_Tags;
 
 
+   function Html4_Inline_Tags return String_Sets.Set is
+      Result : String_Sets.Set;
+   begin
+      --  % fontstyle
+      Result.Insert ("tt");
+      Result.Insert ("i");
+      Result.Insert ("b");
+      Result.Insert ("big");
+      Result.Insert ("small");
+
+      --  % phrase
+      Result.Insert ("em");
+      Result.Insert ("strong");
+      Result.Insert ("dfn");
+      Result.Insert ("code");
+      Result.Insert ("smap");
+      Result.Insert ("kbd");
+      Result.Insert ("var");
+      Result.Insert ("cite");
+      Result.Insert ("abbr");
+      Result.Insert ("acronym");
+
+      --  % special
+      Result.Insert ("a");
+      Result.Insert ("img");
+      Result.Insert ("object");
+      Result.Insert ("br");
+      Result.Insert ("script");
+      Result.Insert ("map");
+      Result.Insert ("q");
+      Result.Insert ("sub");
+      Result.Insert ("sup");
+      Result.Insert ("span");
+      Result.Insert ("bdo");
+
+      --  % formctrl
+      Result.Insert ("input");
+      Result.Insert ("select");
+      Result.Insert ("textarea");
+      Result.Insert ("label");
+      Result.Insert ("button");
+
+      return Result;
+   end Html4_Inline_Tags;
+
+
    function Shortlex_Icase_Less_Than (Left, Right : String) return Boolean is
    begin
       return Left'Length < Right'Length
@@ -510,6 +556,20 @@ package body Markup.Parsers.Markdown is
          Tokenizers.Escape'(Parser.Ref,
                             Element_Holders.To_Holder (Element)));
    end Escape;
+
+
+   procedure Html_Span
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class;
+      Allowed_Tags : in String_Sets.Set := Html4_Inline_Tags) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Spans.Add_Tokenizer
+        ('<',
+         Tokenizers.Html_Span'(Parser.Ref,
+                               Element_Holders.To_Holder (Element),
+                               Allowed_Tags));
+   end Html_Span;
 
 
    procedure Image
@@ -1796,6 +1856,76 @@ package body Markup.Parsers.Markdown is
          Element.Close;
 
          Text.Exclude_Slice (Slices.To_Range (Text_First, Text_Second));
+      end Process;
+
+
+      procedure Process
+        (Object : in out Html_Span;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         Text_First : constant Positive := Text.First;
+         Opener : constant Character := Text.Element (Text_First);
+         Closer : constant Character
+           := Maps.Value (Tools.Delimiter_Pairs, Opener);
+
+         Span_First : constant Natural := Text.Next (Text_First);
+         Tag_First, Tag_Last : Positive;
+
+         N : Natural;
+      begin
+         if Span_First = 0 then
+            return;
+         end if;
+
+         --  Skip optional slash for closing tags
+
+         if Text.Element (Span_First) = '/' then
+            N := Text.Next (Span_First);
+            if N = 0 then
+               return;
+            end if;
+            Tag_First := N;
+         else
+            Tag_First := Span_First;
+         end if;
+
+         --  Look for end of tag name
+
+         N := Text.Index
+           (Tools.Alphanumeric_Set, Tag_First, Ada.Strings.Outside);
+         if N = 0 or else not Maps.Is_In
+           (Text.Element (N), Maps."or" (Tools.Blanks, Maps.To_Set (Closer)))
+         then
+            return;
+         end if;
+         Tag_Last := Text.Previous (N);
+
+         --  Abort if tag is not recognised
+
+         if not Object.Allowed_Tags.Contains
+           (Text.To_String (Tag_First, Tag_Last))
+         then
+            return;
+         end if;
+
+         --  Look for end of span
+
+         N := Text.Index (Maps.To_Set (Closer), N);
+         if N = 0 then
+            return;
+         end if;
+
+         --  Hand over the raw to text to element
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            Element.Open;
+            Element.Append (Text.To_String (Text_First, N));
+            Element.Close;
+         end;
+
+         Text.Exclude_Slice (Text_First, N);
       end Process;
 
 

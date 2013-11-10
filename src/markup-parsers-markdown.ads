@@ -70,6 +70,7 @@ package Markup.Parsers.Markdown is
      (String, Shortlex_Icase_Less_Than);
 
    function Html4_Block_Tags return String_Sets.Set;
+   function Html4_Inline_Tags return String_Sets.Set;
 
    function Standard_Schemes return String_Sets.Set;
       --  HTTP, HTTPS, FTP and empty (schemeless links)
@@ -140,6 +141,11 @@ package Markup.Parsers.Markdown is
    procedure Escape
      (Parser : in out Markdown_Parser;
       Element : in Element_Callback'Class);
+
+   procedure Html_Span
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class;
+      Allowed_Tags : in String_Sets.Set := Html4_Inline_Tags);
 
    procedure Image
      (Parser : in out Markdown_Parser;
@@ -291,6 +297,13 @@ private
       type Escape is new Base with null record;
       procedure Process
         (Object : in out Escape;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+      type Html_Span is new Base with record
+         Allowed_Tags : String_Sets.Set;
+      end record;
+      procedure Process
+        (Object : in out Html_Span;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
       type Link is new Base with record
