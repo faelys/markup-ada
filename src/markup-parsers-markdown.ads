@@ -87,6 +87,10 @@ package Markup.Parsers.Markdown is
      (Parser : in out Markdown_Parser;
       Element : in Element_Callback'Class);
 
+   procedure Horizontal_Rule
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class);
+
    procedure Html_Block
      (Parser : in out Markdown_Parser;
       Element : in Element_Callback'Class;
@@ -226,6 +230,11 @@ private
       type Code_Block is new Base with null record;
       procedure Process
         (Object : in out Code_Block;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+      type Horizontal_Rule is new Base with null record;
+      procedure Process
+        (Object : in out Horizontal_Rule;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
       type Html_Block is new Base with record

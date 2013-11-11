@@ -413,6 +413,17 @@ package body Markup.Parsers.Markdown is
    end Code_Block;
 
 
+   procedure Horizontal_Rule
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer (Tokenizers.Horizontal_Rule'
+        (State => Parser.Ref,
+         Backend => Element_Holders.To_Holder (Element)));
+   end Horizontal_Rule;
+
+
    procedure Html_Block
      (Parser : in out Markdown_Parser;
       Element : in Element_Callback'Class;
@@ -887,6 +898,76 @@ package body Markup.Parsers.Markdown is
          end;
 
          Text.Exclude_Slice (Slices.To_Range (Text_First, Line_Last));
+      end Process;
+
+
+      procedure Process
+        (Object : in out Horizontal_Rule;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         function Process_Line (S : String) return Boolean;
+
+         Text_First : Natural := 0;
+         Block_Last : Natural := 0;
+         Marker : Character;
+
+         function Process_Line (S : String) return Boolean is
+            use type Maps.Character_Set;
+
+            N : Natural;
+         begin
+            if Text_First = 0 then
+               --  Process the fist line, returning True to abort processing
+
+               N := Fixed.Index (S, Tools.Spaces, Ada.Strings.Outside);
+               if N = 0
+                 or else (S (N) /= '-' and S (N) /= '*' and S (N) /= '_')
+               then
+                  return True;
+               end if;
+
+               Marker := S (N);
+               N := Fixed.Index
+                 (S,
+                  Tools.Blanks or Maps.To_Set (Marker),
+                  Ada.Strings.Outside);
+               if N /= 0 then
+                  return True;
+               end if;
+
+               --  Accept the line as valid, record its bounds
+
+               Text_First := S'First;
+               Block_Last := S'Last;
+               return False;
+            elsif Tools.Is_Blank (S) then
+               --  Record blank lines to remove them as part of the block
+               Block_Last := S'Last;
+               return False;
+            else
+               --  Non-blank line belonging to the following block
+               return True;
+            end if;
+         end Process_Line;
+
+         Discarded : Slices.String_Range;
+      begin
+         Discarded := Text.Find_Slice (Process_Line'Access);
+         pragma Unreferenced (Discarded);
+
+         if Text_First = 0 or Block_Last = 0 then
+            return;
+         end if;
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            Element.Open;
+            --  No content therefore no Element.Append
+            Element.Close;
+         end;
+
+         Text.Exclude_Slice (Text_First, Block_Last);
       end Process;
 
 

@@ -38,6 +38,7 @@ begin
 
    Parser.Atx_Header (Renderer.Header);
    Parser.Code_Block (Renderer.Code_Block);
+   Parser.Horizontal_Rule (Renderer.Horizontal_Rule);
    Parser.Html_Block (Renderer.Raw_Html_Block);
    Parser.Html_Comment_Block (Renderer.Raw_Html_Block);
    Parser.List (Renderer.Ordered_List, Renderer.List_Item,
