@@ -40,6 +40,8 @@ package body Markup.Parsers.Markdown is
 
    procedure Initialize_If_Needed (Ref : in out State_Refs.Reference);
 
+   function Is_Horizontal_Rule (Line : String) return Boolean;
+
    function Line_Beginning (S : in String) return Positive;
 
    function Ordered_Marker_Length (S : String) return Natural;
@@ -65,6 +67,29 @@ package body Markup.Parsers.Markdown is
          Ref.Replace (Default_State'Access);
       end if;
    end Initialize_If_Needed;
+
+
+   function Is_Horizontal_Rule (Line : String) return Boolean is
+      N : Natural;
+      Marker : Character;
+
+      use type Maps.Character_Set;
+   begin
+      N := Fixed.Index (Line, Tools.Spaces, Ada.Strings.Outside);
+      if N = 0
+        or else (Line (N) /= '-' and Line (N) /= '*' and Line (N) /= '_')
+      then
+         return False;
+      end if;
+
+      Marker := Line (N);
+      N := Fixed.Index
+        (Line,
+         Tools.Blanks or Maps.To_Set (Marker),
+         Ada.Strings.Outside);
+
+      return N = 0;
+   end Is_Horizontal_Rule;
 
 
    function Line_Beginning (S : in String) return Positive is
@@ -909,33 +934,13 @@ package body Markup.Parsers.Markdown is
 
          Text_First : Natural := 0;
          Block_Last : Natural := 0;
-         Marker : Character;
 
          function Process_Line (S : String) return Boolean is
-            use type Maps.Character_Set;
-
-            N : Natural;
          begin
             if Text_First = 0 then
-               --  Process the fist line, returning True to abort processing
-
-               N := Fixed.Index (S, Tools.Spaces, Ada.Strings.Outside);
-               if N = 0
-                 or else (S (N) /= '-' and S (N) /= '*' and S (N) /= '_')
-               then
+               if not Is_Horizontal_Rule (S) then
                   return True;
                end if;
-
-               Marker := S (N);
-               N := Fixed.Index
-                 (S,
-                  Tools.Blanks or Maps.To_Set (Marker),
-                  Ada.Strings.Outside);
-               if N /= 0 then
-                  return True;
-               end if;
-
-               --  Accept the line as valid, record its bounds
 
                Text_First := S'First;
                Block_Last := S'Last;
@@ -1244,6 +1249,7 @@ package body Markup.Parsers.Markdown is
          Blank_Last : Natural := 0;
          Item_Count : Natural := 0;
          Block_Count : Positive := 1;
+         Possible_Rule : Boolean := False;
 
          function Scan_Line (S : String) return Boolean is
             N : Natural;
@@ -1271,11 +1277,19 @@ package body Markup.Parsers.Markdown is
                   return True;
                end if;
 
+               if Is_Horizontal_Rule (S) then
+                  Possible_Rule := True;
+               else
+                  List_Last := S'Last;
+               end if;
+
                Item_Count := 1;
-               List_Last := S'Last;
                return False;
 
             elsif Tools.Is_Blank (S) then
+               if Possible_Rule then
+                  return True;
+               end if;
                Blank_Last := S'Last;
                return False;
 
@@ -1291,9 +1305,13 @@ package body Markup.Parsers.Markdown is
                      end if;
 
                      if Marker_Length (S) > 0 then
+                        if Is_Horizontal_Rule (S) then
+                           Possible_Rule := True;
+                        else
+                           List_Last := S'Last;
+                        end if;
                         Item_Count := Item_Count + 1;
                         Block_Count := Block_Count + 1;
-                        List_Last := S'Last;
                         return False;
                      elsif Indent_Length (S) > 0 then
                         List_Last := S'Last;
@@ -1307,6 +1325,7 @@ package body Markup.Parsers.Markdown is
                if Marker_Length (S) > 0 then
                   Item_Count := Item_Count + 1;
                end if;
+               Possible_Rule := False;
                List_Last := S'Last;
                return False;
             end if;
