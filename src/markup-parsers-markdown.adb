@@ -1344,9 +1344,40 @@ package body Markup.Parsers.Markdown is
                Contents : Sets.Slice_Set
                  := Text.Subset (Slices.To_Range (Item_First, Item_Last));
                Element : Element_Callback'Class := Object.Item.Element;
+               Sub_List : Natural := 0;
+
+               function Trim (S : in String) return Slices.String_Range;
+                  --  Trim indentation and check sublist start
+
+               function Trim (S : in String) return Slices.String_Range is
+                  L : constant Natural := Indent_Length (S);
+               begin
+                  if Sub_List = 0 and then
+                    (Ordered_Marker_Length (S (S'First + L .. S'Last)) > 0
+                     or else Unordered_Marker_Length
+                               (S (S'First + L .. S'Last)) > 0)
+                  then
+                     Sub_List := S'First;
+                  end if;
+
+                  return (S'First + L, S'Length - L);
+               end Trim;
             begin
+               Contents.Trim_Slices (Trim'Access);
                Element.Open;
-               Recurse (Object.State.Update.Data.all, Contents, Element);
+               if Sub_List = 0 then
+                  Recurse (Object.State.Update.Data.all, Contents, Element);
+               else
+                  declare
+                     Part : Sets.Slice_Set
+                       := Contents.Subset (Item_First, Sub_List - 1);
+                  begin
+                     Recurse (Object.State.Update.Data.all, Part, Element);
+                     Part := Contents.Subset (Sub_List, Item_Last);
+                     Process_Blocks
+                       (Object.State.Update.Data.all, Part, Element);
+                  end;
+               end if;
                Element.Close;
             end;
 
