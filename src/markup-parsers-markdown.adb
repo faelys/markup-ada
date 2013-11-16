@@ -1250,6 +1250,7 @@ package body Markup.Parsers.Markdown is
          Item_Count : Natural := 0;
          Block_Count : Positive := 1;
          Possible_Rule : Boolean := False;
+         Has_Indented_Block : Boolean := False;
 
          function Scan_Line (S : String) return Boolean is
             N : Natural;
@@ -1314,6 +1315,7 @@ package body Markup.Parsers.Markdown is
                         Block_Count := Block_Count + 1;
                         return False;
                      elsif Indent_Length (S) > 0 then
+                        Has_Indented_Block := True;
                         List_Last := S'Last;
                         return False;
                      else
@@ -1430,7 +1432,7 @@ package body Markup.Parsers.Markdown is
             when Styles.Block =>
                Recurse := Process_Blocks'Access;
             when Styles.Any_Item =>
-               if Block_Count > 1 then
+               if Block_Count > 1 or Has_Indented_Block then
                   Recurse := Process_Blocks'Access;
                else
                   Recurse := Process_Spans'Access;
