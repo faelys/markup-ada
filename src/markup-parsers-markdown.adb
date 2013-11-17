@@ -772,11 +772,17 @@ package body Markup.Parsers.Markdown is
 
          declare
             Inserted : Boolean;
+            Title_Slice : Slices.Slice;
+            use type Slices.String_Range;
          begin
+            if Title_Range /= (1, 0) then
+               Title_Slice := Output.Subset (Title_Range).To_Slice;
+            end if;
+
             Parser.Ref.Update.Data.Link_Map.Insert
               (Key => To_Key (Output.Subset (Id_Range).To_String),
                New_Item => (Link => Output.Subset (Link_Range).To_Slice,
-                            Title => Output.Subset (Title_Range).To_Slice),
+                            Title => Title_Slice),
                Position => Latest_Link,
                Inserted => Inserted);
             if not Inserted then
