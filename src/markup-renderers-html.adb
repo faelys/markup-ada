@@ -173,16 +173,17 @@ package body Markup.Renderers.Html is
       Append (State.Output, " ");
       Append (State.Output, Name);
       Append (State.Output, "=""");
-      Append_Text (State, Value);
+      Append_Text (State, Value, Escape_Quotes => True);
       Append (State.Output, """");
    end Append_Attribute;
 
 
    procedure Append_Text
      (State : in out Renderer_Data;
-      Text : in String)
+      Text : in String;
+      Escape_Quotes : in Boolean := False)
    is
-      Escape_Set : constant Maps.Character_Set := Maps.To_Set ("""<>&");
+      Escape_Set : Maps.Character_Set;
       Position : Positive := Text'First;
       N : Natural;
       Last : Natural := Text'Last;
@@ -209,6 +210,12 @@ package body Markup.Renderers.Html is
 
       Append_Pending_Newline (State);
       State.Newline_Pending := Last < Text'Last;
+
+      if Escape_Quotes then
+         Escape_Set := Maps.To_Set ("""<>&");
+      else
+         Escape_Set := Maps.To_Set ("<>&");
+      end if;
 
       while Position in Text'First .. Last loop
          N := Fixed.Index (Source => Text,
@@ -508,7 +515,7 @@ package body Markup.Renderers.Html is
          raise Program_Error with "Append text to a non-opened token";
       end if;
 
-      Element.Renderer.Update.Data.Append_Text (Text);
+      Element.Renderer.Update.Data.Append_Text (Text, Escape_Quotes => True);
    end Append;
 
 

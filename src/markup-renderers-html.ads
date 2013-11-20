@@ -136,7 +136,8 @@ private
 
    procedure Append_Text
      (State : in out Renderer_Data;
-      Text : in String);
+      Text : in String;
+      Escape_Quotes : in Boolean := False);
    --  Escape the given text and output it
 
    procedure Append_Newline
