@@ -324,6 +324,14 @@ package body Markup.Parsers.Markdown is
    end Html4_Inline_Tags;
 
 
+   function Html4_Void_Block_Tags return String_Sets.Set is
+      Result : String_Sets.Set;
+   begin
+      Result.Insert ("hr");
+      return Result;
+   end Html4_Void_Block_Tags;
+
+
    function Shortlex_Icase_Less_Than (Left, Right : String) return Boolean is
    begin
       return Left'Length < Right'Length
@@ -460,6 +468,19 @@ package body Markup.Parsers.Markdown is
          Backend => Element_Holders.To_Holder (Element),
          Allowed_Tags => Allowed_Tags));
    end Html_Block;
+
+
+   procedure Html_Tag_Block
+     (Parser : in out Markdown_Parser;
+      Element : in Element_Callback'Class;
+      Allowed_Tags : in String_Sets.Set := Html4_Void_Block_Tags) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer (Tokenizers.Html_Tag_Block'
+        (State => Parser.Ref,
+         Backend => Element_Holders.To_Holder (Element),
+         Allowed_Tags => Allowed_Tags));
+   end Html_Tag_Block;
 
 
    procedure Html_Comment_Block
@@ -1126,6 +1147,124 @@ package body Markup.Parsers.Markdown is
             then
                return;
             end if;
+         end if;
+
+         --  Render appropriately
+
+         Text_First := Text.First;
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            Element.Open;
+            Element.Append
+             (Text.Subset (Slices.To_Range (Text_First, Html_Last)).To_String);
+            Element.Close;
+         end;
+
+         if Block_Last > 0 then
+            Text.Exclude_Slice (Slices.To_Range (Text_First, Block_Last));
+         else
+            pragma Assert (Html_Last = Text.Last);
+            Text.Clear;
+         end if;
+      end Process;
+
+
+      procedure Process
+        (Object : in out Html_Tag_Block;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         function Process_Line (S : in String) return Boolean;
+
+         Closer_Set : constant Maps.Character_Set := Maps.To_Set ('>');
+
+         Text_First : Natural;
+         Block_Last : Natural := 0;
+         Html_Last : Natural := 0;
+         Tag_Last : Natural := 0;
+         Ending : Boolean := False;
+
+         function Process_Line (S : in String) return Boolean is
+            N : Natural;
+         begin
+            if Html_Last = 0 then
+               --  processing the first line
+
+               if S (S'First) /= '<' or else S'First + 1 not in S'Range then
+                  return True;
+               end if;
+
+               N := Fixed.Index (S, Tools.Alphanumeric_Set, S'First + 1,
+                                 Ada.Strings.Outside);
+               if N = 0 then
+                  Tag_Last := S'Last;
+               else
+                  Tag_Last := N - 1;
+               end if;
+
+               if not Object.Allowed_Tags.Contains
+                        (S (S'First + 1 .. Tag_Last))
+               then
+                  return True;
+               end if;
+
+               N := Fixed.Index (S, Closer_Set, Tag_Last);
+
+               if N /= 0 then
+                  Text.Next (N);
+                  if N /= 0
+                    and then Fixed.Index
+                               (S, Tools.Blanks, N, Ada.Strings.Outside) /= 0
+                  then
+                     return True;
+                  end if;
+
+                  Ending := True;
+               end if;
+
+               Html_Last := S'Last;
+               return False;
+
+            elsif Tools.Is_Blank (S) then
+               Block_Last := S'Last;
+               return False;
+
+            elsif Block_Last > 0 and Ending then
+               return True;
+
+            else
+               if Ending then
+                  Html_Last := 0;
+                  return True;
+               end if;
+
+               N := Fixed.Index (S, Closer_Set, Tag_Last);
+
+               if N /= 0 then
+                  Text.Next (N);
+                  if N /= 0
+                    and then Fixed.Index
+                               (S, Tools.Blanks, N, Ada.Strings.Outside) /= 0
+                  then
+                     Html_Last := 0;
+                     return True;
+                  end if;
+
+                  Ending := True;
+               end if;
+
+               Html_Last := S'Last;
+               return False;
+            end if;
+         end Process_Line;
+
+         Discarded : Slices.String_Range;
+      begin
+         Discarded := Text.Find_Slice (Process_Line'Access);
+         pragma Unreferenced (Discarded);
+         if Html_Last = 0 or not Ending then
+            return;
          end if;
 
          --  Render appropriately
