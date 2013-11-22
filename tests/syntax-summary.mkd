@@ -33,6 +33,15 @@ or block-level items, like this :
 
 2. The same things for numbered lists.
 
+Lists can also be nested:
+
+* Item 1
+    + Item 1.1
+    + Item 1.2
+* Item 2
+    1. Item 2.1
+    2. Item 2.2
+
 Code blocks are unmarked indented blocks, however some blocks consider
 indentation as succession (e.g. list items).
 
@@ -46,6 +55,28 @@ performed here.</p>
 </div>
 
 <!-- HTML comments are also considered as blocks. -->
+
+Horizontal rules is a line containing at least three dashes (`-`),
+stars (`*`) or underscores (`_`) without any other non-blank character.
+
+ - - -
+
+They can also be entered as a single raw HTML tag:
+
+<hr>
+
+<hr
+class="special-horiz-rule"
+/>
+
+Since horizontal rules also use list markers, as a special rule a valid
+horizontal rule syntax is not considered as a list item:
+
+ - first block
+
+ - second (and last) block
+
+ - - -
 
 ## Atx-style level-two header
 
@@ -76,6 +107,10 @@ here to remove the ambiguity of nesting order.
 HTML &#x65;ntities are part of Markdown specification, so they have a
 dedicated parser element so they can be handled correctly by non-HTML
 renderers.
+
+Similarly, inline <abbr title="HyperText Markup Language">HTML</abbr> tags
+are recognized and given as-is to the renderer. Note also that no correctness
+or balancing test is perfomed.
 
 Backslashes (`\`) quote the following character, so that litteral \` backticks
 or \* stars can be inserted in a text.
