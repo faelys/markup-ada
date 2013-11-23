@@ -1239,7 +1239,7 @@ package body Markup.Parsers.Markdown is
                   return True;
                end if;
 
-               N := Fixed.Index (S, Closer_Set, Tag_Last);
+               N := Fixed.Index (S, Closer_Set);
 
                if N /= 0 then
                   Text.Next (N);
