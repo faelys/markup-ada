@@ -19,7 +19,7 @@ with Ada.Streams;
 with Ada.Strings.Unbounded;
 
 with Natools.String_Slices;
-with Markup.Parsers.Markdown;
+with Markup.Parsers.Markdown.Extensions;
 with Markup.Renderers.Instances;
 
 procedure Markdown is
@@ -27,7 +27,7 @@ procedure Markdown is
    Input : constant Ada.Text_IO.Text_Streams.Stream_Access
      := Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Current_Input);
 
-   Parser : Markup.Parsers.Markdown.Markdown_Parser;
+   Parser : Markup.Parsers.Markdown.Extensions.Extended_Parser;
    Renderer : Markup.Renderers.Instances.Html_Stream.Renderer_Ref;
 
    Text : Natools.String_Slices.Slice;
@@ -56,7 +56,7 @@ begin
    Parser.Entity (Renderer.Raw_Html_Span);
    Parser.Escape (Renderer.Raw_Text_Span);
    Parser.Code_Span (Renderer.Code_Span);
-   Parser.Image (Renderer.Image);
+   Parser.Discount_Image (Renderer.Image);
    Parser.Link (Renderer.Anchor);
    Parser.Auto_Link (Renderer.Anchor);
    Parser.Html_Span (Renderer.Raw_Html_Span);
