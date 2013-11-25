@@ -646,6 +646,27 @@ package body Markup.Renderers.Html is
       return Create (Renderer, "pre", "code", Newline_After_Close => True);
    end Code_Block;
 
+   function Definition_Description (Renderer : Renderer_Ref)
+     return Element_Callback'Class is
+   begin
+      return Create (Renderer, "dd", Newline_After_Close => True);
+   end Definition_Description;
+
+   function Definition_List (Renderer : Renderer_Ref)
+     return Element_Callback'Class is
+   begin
+      return Create (Renderer, "dl",
+        Newline_After_Open => True,
+        Newline_Before_Close => True,
+        Newline_After_Close => True);
+   end Definition_List;
+
+   function Definition_Title (Renderer : Renderer_Ref)
+     return Element_Callback'Class is
+   begin
+      return Create (Renderer, "dt", Newline_After_Close => True);
+   end Definition_Title;
+
 
    function Header (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin

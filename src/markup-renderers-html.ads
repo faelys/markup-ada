@@ -57,6 +57,15 @@ package Markup.Renderers.Html is
 
    function Code_Block (Renderer : Renderer_Ref) return Element_Callback'Class;
 
+   function Definition_Description (Renderer : Renderer_Ref)
+     return Element_Callback'Class;
+
+   function Definition_List (Renderer : Renderer_Ref)
+     return Element_Callback'Class;
+
+   function Definition_Title (Renderer : Renderer_Ref)
+     return Element_Callback'Class;
+
    function Header (Renderer : Renderer_Ref) return Element_Callback'Class;
 
    function Horizontal_Rule (Renderer : Renderer_Ref)
