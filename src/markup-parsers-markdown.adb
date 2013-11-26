@@ -30,30 +30,9 @@ package body Markup.Parsers.Markdown is
    package Sets renames Natools.String_Slices.Slice_Sets;
 
 
-   ------------------------------
-   -- Local helper subprograms --
-   ------------------------------
-
-   function Default_State return Markdown_State;
-
-   function Indent_Length (S : in String) return Natural;
-
-   procedure Initialize_If_Needed (Ref : in out State_Refs.Reference);
-
-   function Is_Horizontal_Rule (Line : String) return Boolean;
-
-   function Line_Beginning (S : in String) return Positive;
-
-   function Ordered_Marker_Length (S : String) return Natural;
-   function Unordered_Marker_Length (S : String) return Natural;
-
-   procedure Remove_Escape (Text : in out Sets.Slice_Set);
-   --  Remove '\' characters from the given text
-
-   procedure Remove_Indent (Text : in out Sets.Slice_Set);
-   --  Remove a level of indentation (a tab or four spaces) from the text.
-
-
+   ------------------------
+   -- Helper subprograms --
+   ------------------------
 
    function Default_State return Markdown_State is
    begin

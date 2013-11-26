@@ -339,4 +339,30 @@ private
 
    end Tokenizers;
 
+
+   ------------------------
+   -- Helper subprograms --
+   ------------------------
+
+   function Default_State return Markdown_State;
+
+   procedure Initialize_If_Needed (Ref : in out State_Refs.Reference);
+
+   function Is_Horizontal_Rule (Line : String) return Boolean;
+
+   function Line_Beginning (S : in String) return Positive;
+
+   function Ordered_Marker_Length (S : String) return Natural;
+   function Unordered_Marker_Length (S : String) return Natural;
+
+   function Indent_Length (S : in String) return Natural;
+
+   procedure Remove_Escape
+     (Text : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+   --  Remove '\' characters from the given text
+
+   procedure Remove_Indent
+     (Text : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+   --  Remove a level of indentation (a tab or four spaces) from the text.
+
 end Markup.Parsers.Markdown;
