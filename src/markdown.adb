@@ -49,6 +49,10 @@ begin
    Parser.Paragraph (Renderer.Paragraph);
    Parser.Quote_Block (Renderer.Quote_Block);
    Parser.Setext_Header (Renderer.Header);
+   Parser.Discount_Definition_List
+     (Renderer.Definition_List,
+      Renderer.Definition_Title,
+      Renderer.Definition_Description);
 
    Parser.Emphasis (Renderer.Emphasis, 1);
    Parser.Emphasis (Renderer.Strong, 2);

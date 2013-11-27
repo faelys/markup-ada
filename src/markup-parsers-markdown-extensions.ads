@@ -23,6 +23,12 @@ package Markup.Parsers.Markdown.Extensions is
 
    type Extended_Parser is new Markdown_Parser with private;
 
+   procedure Discount_Definition_List
+     (Parser : in out Extended_Parser;
+      List_Element : in Element_Callback'Class;
+      Title_Element : in Element_Callback'Class;
+      Description_Element : in Element_Callback'Class);
+
    procedure Discount_Image
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class;
@@ -46,5 +52,14 @@ private
    procedure Set_Title
      (Element : in out Image_Sizer;
       Title : in Natools.String_Slices.Slice);
+
+   type Definition_List_Tokenizer is new Tokenizers.Base with record
+      Title : Element_Holders.Holder;
+      Description : Element_Holders.Holder;
+   end record;
+
+   overriding procedure Process
+     (Object : in out Definition_List_Tokenizer;
+      Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
 end Markup.Parsers.Markdown.Extensions;
