@@ -38,28 +38,38 @@ private
 
    type Extended_Parser is new Markdown_Parser with null record;
 
-   type Image_Sizer is new Element_Callback and With_Title and With_Link with
-   record
-      Backend : Element_Holders.Holder;
-   end record;
 
-   procedure Open (Element : in out Image_Sizer);
-   procedure Append (Element : in out Image_Sizer; Text : in String);
-   procedure Close (Element : in out Image_Sizer);
-   procedure Set_Link
-     (Element : in out Image_Sizer;
-      Link : in Natools.String_Slices.Slice);
-   procedure Set_Title
-     (Element : in out Image_Sizer;
-      Title : in Natools.String_Slices.Slice);
+   package Elements is
 
-   type Definition_List_Tokenizer is new Tokenizers.Base with record
-      Title : Element_Holders.Holder;
-      Description : Element_Holders.Holder;
-   end record;
+      type Image_Sizer is new Element_Callback and With_Title and With_Link
+      with record
+         Backend : Element_Holders.Holder;
+      end record;
 
-   overriding procedure Process
-     (Object : in out Definition_List_Tokenizer;
-      Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+      procedure Open (Element : in out Image_Sizer);
+      procedure Append (Element : in out Image_Sizer; Text : in String);
+      procedure Close (Element : in out Image_Sizer);
+      procedure Set_Link
+        (Element : in out Image_Sizer;
+         Link : in Natools.String_Slices.Slice);
+      procedure Set_Title
+        (Element : in out Image_Sizer;
+         Title : in Natools.String_Slices.Slice);
+
+   end Elements;
+
+
+   package Tokenizers is
+
+      type Discount_Definitions is new Markdown.Tokenizers.Base with record
+         Title : Element_Holders.Holder;
+         Description : Element_Holders.Holder;
+      end record;
+
+      overriding procedure Process
+        (Object : in out Discount_Definitions;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+   end Tokenizers;
 
 end Markup.Parsers.Markdown.Extensions;
