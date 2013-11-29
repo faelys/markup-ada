@@ -17,6 +17,7 @@
 ------------------------------------------------------------------------------
 -- Markup.Parsers.Markdown.Extensions contains various extensions of the    --
 -- original markdown syntax.                                                --
+-- PME stands for syntax inspired from PHP-Markdown-Extra                   --
 ------------------------------------------------------------------------------
 
 package Markup.Parsers.Markdown.Extensions is
@@ -33,6 +34,12 @@ package Markup.Parsers.Markdown.Extensions is
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class;
       Style_Set : in Style_Sets.Link := (others => True));
+
+   procedure PME_Definition_List
+     (Parser : in out Extended_Parser;
+      List_Element : in Element_Callback'Class;
+      Title_Element : in Element_Callback'Class;
+      Description_Element : in Element_Callback'Class);
 
 private
 
@@ -68,6 +75,15 @@ private
 
       overriding procedure Process
         (Object : in out Discount_Definitions;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+      type PME_Definitions is new Markdown.Tokenizers.Base with record
+         Title : Element_Holders.Holder;
+         Description : Element_Holders.Holder;
+      end record;
+
+      overriding procedure Process
+        (Object : in out PME_Definitions;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
    end Tokenizers;

@@ -14,6 +14,7 @@
 -- OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           --
 ------------------------------------------------------------------------------
 
+with Ada.Characters.Latin_1;
 with Ada.Strings.Fixed;
 
 with Markup.Tools;
@@ -21,6 +22,7 @@ with Markup.Tools;
 package body Markup.Parsers.Markdown.Extensions is
 
    package Fixed renames Ada.Strings.Fixed;
+   package Latin_1 renames Ada.Characters.Latin_1;
 
 
    ----------------------
@@ -57,6 +59,22 @@ package body Markup.Parsers.Markdown.Extensions is
          Parser.Image (Element, Style_Set);
       end if;
    end Discount_Image;
+
+
+   procedure PME_Definition_List
+     (Parser : in out Extended_Parser;
+      List_Element : in Element_Callback'Class;
+      Title_Element : in Element_Callback'Class;
+      Description_Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer
+        (Tokenizers.PME_Definitions'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (List_Element),
+            Title => Element_Holders.To_Holder (Title_Element),
+            Description => Element_Holders.To_Holder (Description_Element)));
+   end PME_Definition_List;
 
 
 
@@ -341,6 +359,183 @@ package body Markup.Parsers.Markdown.Extensions is
          begin
             Element.Open;
             Discarded := Text.Find_Slice (Render_Items'Access);
+            Render_Descr;
+            Element.Close;
+         end;
+
+         if Blank_Last > List_Last then
+            Text.Exclude_Slice (Text.First, Blank_Last);
+         else
+            pragma Assert (Text.Last = List_Last);
+            Text.Clear;
+         end if;
+      end Process;
+
+
+
+      overriding procedure Process
+        (Object : in out PME_Definitions;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         function Description_Prefix (S : String) return Natural;
+         function Scan_Block (S : String) return Boolean;
+         function Render (S : String) return Boolean;
+         procedure Render_Descr;
+         procedure Render_Title (First, Last : in Natural);
+
+         First_Line : Boolean := False;
+         List_Last : Natural := 0;
+         Blank_Last : Natural := 0;
+         Candidate_Last : Natural := 0;
+
+         function Description_Prefix (S : String) return Natural is
+            N : constant Natural := Line_Beginning (S);
+         begin
+            if N in S'Range and then N + 1 in S'Range
+              and then S (N) = ':'
+              and then (S (N + 1) = ' ' or S (N + 1) = Latin_1.HT)
+            then
+               return N + 2 - S'First;
+            else
+               return 0;
+            end if;
+         end Description_Prefix;
+
+
+         function Scan_Block (S : String) return Boolean is
+         begin
+            if Tools.Is_Blank (S) then
+               if Candidate_Last > List_Last then
+                  return True;
+               end if;
+               Blank_Last := S'Last;
+
+            elsif Description_Prefix (S) > 0 then
+               if First_Line then
+                  return True;
+               end if;
+               List_Last := S'Last;
+
+            elsif List_Last > Blank_Last then
+               --  Continue an existing approved block
+               List_Last := S'Last;
+
+            elsif Blank_Last > Candidate_Last
+              and then Indent_Length (S) > 0
+            then
+               --  Approve first line of a new block when indented
+               List_Last := S'Last;
+
+            else
+               --  Inside a still undetermined block
+               Candidate_Last := S'Last;
+            end if;
+
+            First_Line := False;
+            return False;
+         end Scan_Block;
+
+
+         Has_Blank : Boolean := False;
+         Prev_Is_Blank : Boolean := False;
+         Description_Last : Natural := 0;
+         Description_First : Natural := 0;
+
+
+         procedure Render_Descr is
+         begin
+            if Description_First = 0 or Description_Last = 0
+              or Description_First > Description_Last
+            then
+               return;
+            end if;
+
+            declare
+               Element : Element_Callback'Class := Object.Description.Element;
+               Contents : Natools.String_Slices.Slice_Sets.Slice_Set
+                 := Text.Subset (Description_First, Description_Last);
+            begin
+               Remove_Indent (Contents);
+               Element.Open;
+               if Has_Blank then
+                  Process_Blocks
+                    (Object.State.Update.Data.all, Contents, Element);
+               else
+                  Process_Spans
+                    (Object.State.Update.Data.all, Contents, Element);
+               end if;
+               Element.Close;
+            end;
+
+            Description_First := 0;
+            Description_Last := 0;
+         end Render_Descr;
+
+
+         procedure Render_Title (First, Last : in Natural) is
+            Element : Element_Callback'Class := Object.Title.Element;
+            Contents : Natools.String_Slices.Slice_Sets.Slice_Set
+              := Text.Subset (First, Last);
+         begin
+            Element.Open;
+            Process_Spans (Object.State.Update.Data.all, Contents, Element);
+            Element.Close;
+         end Render_Title;
+
+
+         function Render (S : String) return Boolean is
+            N : constant Natural := Description_Prefix (S);
+         begin
+            if S'First > List_Last then
+               return True;
+
+            elsif Tools.Is_Blank (S) then
+               Prev_Is_Blank := True;
+
+            elsif N > 0 then
+               Render_Descr;
+               Description_First := S'First + N;
+               Description_Last := S'Last;
+               Has_Blank := Prev_Is_Blank;
+               Prev_Is_Blank := False;
+
+            elsif Prev_Is_Blank then
+               if Indent_Length (S) > 0 then
+                  Description_Last := S'Last;
+                  Has_Blank := True;
+               else
+                  Render_Descr;
+                  Render_Title (S'First, S'Last);
+               end if;
+               Prev_Is_Blank := False;
+
+            elsif Description_Last > 0 then
+               Description_Last := S'Last;
+               Prev_Is_Blank := False;
+
+            else
+               Render_Title (S'First, S'Last);
+               Prev_Is_Blank := False;
+            end if;
+
+            return False;
+         end Render;
+
+
+         Discarded : Natools.String_Slices.String_Range;
+         pragma Unreferenced (Discarded);
+      begin
+         Discarded := Text.Find_Slice (Scan_Block'Access);
+
+         if List_Last = 0 then
+            return;
+         end if;
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            Element.Open;
+            Discarded := Text.Find_Slice (Render'Access);
             Render_Descr;
             Element.Close;
          end;

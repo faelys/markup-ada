@@ -53,6 +53,10 @@ begin
      (Renderer.Definition_List,
       Renderer.Definition_Title,
       Renderer.Definition_Description);
+   Parser.PME_Definition_List
+     (Renderer.Definition_List,
+      Renderer.Definition_Title,
+      Renderer.Definition_Description);
 
    Parser.Emphasis (Renderer.Emphasis, 1);
    Parser.Emphasis (Renderer.Strong, 2);
