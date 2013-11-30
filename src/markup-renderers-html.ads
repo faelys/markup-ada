@@ -180,7 +180,9 @@ private
 
    type Html_Tag_Size is range 1 .. Html_Tag_Max_Size;
 
-   type Html_Element is new Element_Callback and With_Identity with record
+   type Html_Element is new Element_Callback
+     and With_Identity and With_Alignment
+   with record
       Tag : String (1 .. Html_Tag_Max_Size);
       Tag_Size : Html_Tag_Size;
       Newline_Before_Open : Boolean;
@@ -190,6 +192,7 @@ private
       Self_Closing : Boolean;
       Classes : Ada.Strings.Unbounded.Unbounded_String;
       Id : Natools.String_Slices.Slice;
+      Align : Alignment := Default_Align;
       Opened : Boolean;
       Renderer : Renderer_Ref;
    end record;
@@ -209,7 +212,12 @@ private
      (Element : in out Html_Element;
       Name : in Natools.String_Slices.Slice);
 
+   overriding procedure Set_Alignment
+     (Element : in out Html_Element;
+      Align : in Alignment);
+
    procedure Append_Attributes (Element : in out Html_Element);
+   function Get_Style (Element : in Html_Element) return String;
 
 
    ------------------------

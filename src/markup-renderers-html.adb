@@ -72,6 +72,7 @@ package body Markup.Renderers.Html is
          Self_Closing => Self_Closing,
          Classes => Ada.Strings.Unbounded.Null_Unbounded_String,
          Id => <>,
+         Align => <>,
          Opened => False,
          Renderer => Renderer);
    end Create;
@@ -378,7 +379,21 @@ package body Markup.Renderers.Html is
 
       Element.Renderer.Update.Data.Append_Attribute
         ("class", Ada.Strings.Unbounded.To_String (Element.Classes));
+
+      Element.Renderer.Update.Data.Append_Attribute
+        ("style", Get_Style (Html_Element'Class (Element)));
    end Append_Attributes;
+
+
+   function Get_Style (Element : in Html_Element) return String is
+   begin
+      case Element.Align is
+         when Default_Align => return "";
+         when Left_Aligned  => return "text-align: left";
+         when Centered_Text => return "text-align: center";
+         when Right_Aligned => return "text-align: right";
+      end case;
+   end Get_Style;
 
 
    overriding procedure Add_Class
@@ -405,6 +420,18 @@ package body Markup.Renderers.Html is
 
       Element.Classes := Ada.Strings.Unbounded.Null_Unbounded_String;
    end Reset_Class_List;
+
+
+   overriding procedure Set_Alignment
+     (Element : in out Html_Element;
+      Align : in Alignment) is
+   begin
+      if Element.Opened then
+         raise Program_Error with "Modification of an opened token";
+      end if;
+
+      Element.Align := Align;
+   end Set_Alignment;
 
 
    overriding procedure Set_Id
