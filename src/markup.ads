@@ -69,4 +69,12 @@ package Markup is
      (Element : in out With_Title;
       Title : in Natools.String_Slices.Slice) is abstract;
 
+   type Alignment is
+     (Default_Align, Left_Aligned, Centered_Text, Right_Aligned);
+   type With_Alignment is interface;
+
+   procedure Set_Alignment
+     (Element : in out With_Alignment;
+      Align : in Alignment) is abstract;
+
 end Markup;
