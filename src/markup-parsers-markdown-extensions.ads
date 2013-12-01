@@ -24,6 +24,10 @@ package Markup.Parsers.Markdown.Extensions is
 
    type Extended_Parser is new Markdown_Parser with private;
 
+   procedure Discount_Centered
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+
    procedure Discount_Definition_List
      (Parser : in out Extended_Parser;
       List_Element : in Element_Callback'Class;
@@ -67,6 +71,12 @@ private
 
 
    package Tokenizers is
+
+      type Discount_Centered is new Markdown.Tokenizers.Base with null record;
+
+      overriding procedure Process
+        (Object : in out Discount_Centered;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
       type Discount_Definitions is new Markdown.Tokenizers.Base with record
          Title : Element_Holders.Holder;

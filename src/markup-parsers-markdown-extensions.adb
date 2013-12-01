@@ -29,6 +29,18 @@ package body Markup.Parsers.Markdown.Extensions is
    -- Public interface --
    ----------------------
 
+   procedure Discount_Centered
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer
+        (Tokenizers.Discount_Centered'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element)));
+   end Discount_Centered;
+
+
    procedure Discount_Definition_List
      (Parser : in out Extended_Parser;
       List_Element : in Element_Callback'Class;
@@ -216,6 +228,96 @@ package body Markup.Parsers.Markdown.Extensions is
 
 
    package body Tokenizers is
+
+      ---------------------------------------
+      -- Discount-style centered paragraph --
+      ---------------------------------------
+
+      overriding procedure Process
+        (Object : in out Discount_Centered;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         Text_First : constant Natural := Text.First;
+         N : Natural;
+         Blank, Para : Natools.String_Slices.String_Range;
+      begin
+         --  Check opening marker
+
+         N := Text.Next (Text_First);
+         if N = 0
+           or else Text.Element (Text_First) /= '-'
+           or else Text.Element (N) /= '>'
+         then
+            return;
+         end if;
+
+         Text.Next (N);
+         if N = 0 then
+            return;
+         end if;
+         N := Text.Index (Tools.Blanks, N, Ada.Strings.Outside);
+         Para.First := N;
+
+         --  Check closing marker
+
+         Blank := Text.Find_Slice (Tools.Is_Blank'Access);
+         if Blank.Length = 0 then
+            N := Text.Index
+              (Tools.Blanks, Ada.Strings.Outside, Ada.Strings.Backward);
+         else
+            N := Text.Index
+              (Tools.Blanks, Blank.First,
+               Ada.Strings.Outside, Ada.Strings.Backward);
+         end if;
+
+         if N = 0 or else Text.Element (N) /= '-' then
+            return;
+         end if;
+         Text.Previous (N);
+         if N = 0 or else Text.Element (N) /= '<' then
+            return;
+         end if;
+         Text.Previous (N);
+         pragma Assert (N /= 0);
+         N := Text.Index
+           (Tools.Blanks, N, Ada.Strings.Outside, Ada.Strings.Backward);
+         if N < Para.First then
+            return;
+         end if;
+
+         Natools.String_Slices.Set_Last (Para, N);
+
+         --  Render the paragraph
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+            Contents : Natools.String_Slices.Slice_Sets.Slice_Set
+              := Text.Subset (Para);
+         begin
+            if Element in With_Alignment'Class then
+               Set_Alignment (With_Alignment'Class (Element), Centered_Text);
+            end if;
+
+            Element.Open;
+            Process_Spans (Object.State.Update.Data.all, Contents, Element);
+            Element.Close;
+         end;
+
+         --  Clean up processed text
+
+         N := Text.Index
+           (Tools.Blanks, Natools.String_Slices.Last (Blank),
+            Ada.Strings.Outside);
+         if N = 0 then
+            Text.Clear;
+            return;
+         end if;
+
+         N := Text.Index (Tools.Eols, N, Going => Ada.Strings.Backward);
+         pragma Assert (N /= 0);
+         Text.Exclude_Slice (Text_First, N);
+      end Process;
+
 
       -------------------------------------
       -- Discount-style definition lists --

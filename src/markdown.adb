@@ -57,6 +57,7 @@ begin
      (Renderer.Definition_List,
       Renderer.Definition_Title,
       Renderer.Definition_Description);
+   Parser.Discount_Centered (Renderer.Paragraph);
 
    Parser.Emphasis (Renderer.Emphasis, 1);
    Parser.Emphasis (Renderer.Strong, 2);
