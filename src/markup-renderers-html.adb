@@ -469,6 +469,34 @@ package body Markup.Renderers.Html is
 
 
 
+   ----------------------
+   -- Token with title --
+   ----------------------
+
+   overriding procedure Set_Title
+     (Element : in out Html_Titled;
+      Title : in Natools.String_Slices.Slice) is
+   begin
+      if Element.Opened then
+         raise Program_Error with "Modification of an opened token";
+      end if;
+
+      Element.Title := Title;
+   end Set_Title;
+
+
+   overriding procedure Append_Attributes (Element : in out Html_Titled) is
+   begin
+      Append_Attributes (Html_Element (Element));
+
+      if not Element.Title.Is_Null then
+         Element.Renderer.Update.Data.Append_Attribute
+           ("title", Slices.To_String (Element.Title), Allow_Empty => True);
+      end if;
+   end Append_Attributes;
+
+
+
    ------------------
    -- Anchor token --
    ------------------
@@ -483,18 +511,6 @@ package body Markup.Renderers.Html is
 
       Element.Link := Link;
    end Set_Link;
-
-
-   overriding procedure Set_Title
-     (Element : in out Html_Anchor;
-      Title : in Natools.String_Slices.Slice) is
-   begin
-      if Element.Opened then
-         raise Program_Error with "Modification of an opened token";
-      end if;
-
-      Element.Title := Title;
-   end Set_Title;
 
 
    overriding procedure Append_Attributes (Element : in out Html_Anchor) is
@@ -797,6 +813,13 @@ package body Markup.Renderers.Html is
    ---------------------------
    -- Span token generators --
    ---------------------------
+
+   function Abbreviation (Renderer : Renderer_Ref)
+     return Element_Callback'Class is
+   begin
+      return Html_Titled'(Create (Renderer, "abbr") with Title => <>);
+   end Abbreviation;
+
 
    function Anchor (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin

@@ -98,6 +98,9 @@ package Markup.Renderers.Html is
      return Element_Callback'Class;
 
 
+   function Abbreviation (Renderer : Renderer_Ref)
+     return Element_Callback'Class;
+
    function Anchor (Renderer : Renderer_Ref) return Element_Callback'Class;
 
    function Code_Span (Renderer : Renderer_Ref) return Element_Callback'Class;
@@ -231,18 +234,24 @@ private
       Level : in Positive);
 
 
-   type Html_Anchor is new Html_Element and With_Link and With_Title
-     with record
-      Link, Title : Natools.String_Slices.Slice;
+   type Html_Titled is new Html_Element and With_Title with record
+      Title : Natools.String_Slices.Slice;
+   end record;
+
+   overriding procedure Set_Title
+     (Element : in out Html_Titled;
+      Title : in Natools.String_Slices.Slice);
+
+   overriding procedure Append_Attributes (Element : in out Html_Titled);
+
+
+   type Html_Anchor is new Html_Titled and With_Link with record
+      Link : Natools.String_Slices.Slice;
    end record;
 
    overriding procedure Set_Link
      (Element : in out Html_Anchor;
       Link : in Natools.String_Slices.Slice);
-
-   overriding procedure Set_Title
-     (Element : in out Html_Anchor;
-      Title : in Natools.String_Slices.Slice);
 
    overriding procedure Append_Attributes (Element : in out Html_Anchor);
 
