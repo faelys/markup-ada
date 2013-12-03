@@ -20,6 +20,8 @@
 -- PME stands for syntax inspired from PHP-Markdown-Extra                   --
 ------------------------------------------------------------------------------
 
+private with Natools.References;
+
 package Markup.Parsers.Markdown.Extensions is
 
    type Extended_Parser is new Markdown_Parser with private;
@@ -39,15 +41,55 @@ package Markup.Parsers.Markdown.Extensions is
       Element : in Element_Callback'Class;
       Style_Set : in Style_Sets.Link := (others => True));
 
+
    procedure PME_Definition_List
      (Parser : in out Extended_Parser;
       List_Element : in Element_Callback'Class;
       Title_Element : in Element_Callback'Class;
       Description_Element : in Element_Callback'Class);
 
+
+   procedure Pseudoprotocol_Link
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Style_Set : in Style_Sets.Link := (others => True));
+
+   procedure Pseudoprotocol_Abbr
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+
+   procedure Pseudoprotocol_Class
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+
+   procedure Pseudoprotocol_Id
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+
+   procedure Pseudoprotocol_Raw
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+
 private
 
-   type Extended_Parser is new Markdown_Parser with null record;
+   package Pseudoprotocol is
+      type Scheme is (Unknown, Abbr, Class, Id, Raw);
+
+      type Backend_Set is array (Scheme) of Element_Holders.Holder;
+   end Pseudoprotocol;
+
+   type Extended_State is record
+      Pseudo_Backend : Pseudoprotocol.Backend_Set;
+   end record;
+
+   package Extended_State_Refs is new Natools.References
+     (Extended_State, Dummy_Access'Storage_Pool, Dummy_Access'Storage_Pool);
+
+   type Extended_Parser is new Markdown_Parser with record
+      Ext_Ref : Extended_State_Refs.Reference;
+   end record;
+
+   procedure Initialize_If_Needed (Ref : in out Extended_State_Refs.Reference);
 
 
    package Elements is
@@ -65,6 +107,24 @@ private
          Link : in Natools.String_Slices.Slice);
       procedure Set_Title
         (Element : in out Image_Sizer;
+         Title : in Natools.String_Slices.Slice);
+
+
+      type Pseudoprotocols is new Element_Callback and With_Title and With_Link
+      with record
+         State : Extended_State_Refs.Reference;
+         Link, Title : Natools.String_Slices.Slice;
+         Backend : Element_Holders.Holder;
+      end record;
+
+      procedure Open (Element : in out Pseudoprotocols);
+      procedure Append (Element : in out Pseudoprotocols; Text : in String);
+      procedure Close (Element : in out Pseudoprotocols);
+      procedure Set_Link
+        (Element : in out Pseudoprotocols;
+         Link : in Natools.String_Slices.Slice);
+      procedure Set_Title
+        (Element : in out Pseudoprotocols;
          Title : in Natools.String_Slices.Slice);
 
    end Elements;

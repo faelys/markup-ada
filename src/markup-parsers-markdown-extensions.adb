@@ -25,6 +25,27 @@ package body Markup.Parsers.Markdown.Extensions is
    package Latin_1 renames Ada.Characters.Latin_1;
 
 
+   ------------------------
+   -- Helper subprograms --
+   ------------------------
+
+   procedure Initialize_If_Needed
+     (Ref : in out Extended_State_Refs.Reference)
+   is
+      function Default_State return Extended_State;
+
+      function Default_State return Extended_State is
+      begin
+         return Extended_State'(others => <>);
+      end Default_State;
+   begin
+      if Ref.Is_Empty then
+         Ref.Replace (Default_State'Access);
+      end if;
+   end Initialize_If_Needed;
+
+
+
    ----------------------
    -- Public interface --
    ----------------------
@@ -87,6 +108,66 @@ package body Markup.Parsers.Markdown.Extensions is
             Title => Element_Holders.To_Holder (Title_Element),
             Description => Element_Holders.To_Holder (Description_Element)));
    end PME_Definition_List;
+
+
+   procedure Pseudoprotocol_Link
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Style_Set : in Style_Sets.Link := (others => True)) is
+   begin
+      Initialize_If_Needed (Parser.Ext_Ref);
+
+      Parser.Link (Elements.Pseudoprotocols'(Parser.Ext_Ref,
+                                             Link | Title | Backend => <>),
+                   Style_Set);
+
+      Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Unknown)
+        := Element_Holders.To_Holder (Element);
+   end Pseudoprotocol_Link;
+
+
+   procedure Pseudoprotocol_Abbr
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Initialize_If_Needed (Parser.Ext_Ref);
+      Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Abbr)
+        := Element_Holders.To_Holder (Element);
+   end Pseudoprotocol_Abbr;
+
+
+   procedure Pseudoprotocol_Class
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Initialize_If_Needed (Parser.Ext_Ref);
+      Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Class)
+        := Element_Holders.To_Holder (Element);
+   end Pseudoprotocol_Class;
+
+
+   procedure Pseudoprotocol_Id
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Initialize_If_Needed (Parser.Ext_Ref);
+      Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Id)
+        := Element_Holders.To_Holder (Element);
+   end Pseudoprotocol_Id;
+
+
+   procedure Pseudoprotocol_Raw
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Initialize_If_Needed (Parser.Ext_Ref);
+      Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Raw)
+        := Element_Holders.To_Holder (Element);
+   end Pseudoprotocol_Raw;
 
 
 
@@ -221,6 +302,163 @@ package body Markup.Parsers.Markdown.Extensions is
       begin
          Process_Title;
          Element.Backend.Update_Element (Process'Access);
+      end Set_Title;
+
+
+
+      ---------------------
+      -- Pseudoprotocols --
+      ---------------------
+
+      procedure Open (Element : in out Pseudoprotocols) is
+         procedure Process (E : in out Element_Callback'Class);
+
+         N : Natural;
+         Link : constant String := Element.Link.To_String;
+         Scheme : Pseudoprotocol.Scheme := Pseudoprotocol.Unknown;
+
+         procedure Process (E : in out Element_Callback'Class) is
+            use type Pseudoprotocol.Scheme;
+         begin
+            case Scheme is
+               when Pseudoprotocol.Unknown =>
+                  if E in With_Title'Class then
+                     Set_Title (With_Title'Class (E), Element.Title);
+                  end if;
+
+                  if E in With_Link'Class then
+                     Set_Link (With_Link'Class (E), Element.Link);
+                  end if;
+
+               when Pseudoprotocol.Abbr =>
+                  if E in With_Title'Class then
+                     if Element.Title.Is_Empty then
+                        Set_Title
+                          (With_Title'Class (E),
+                           Element.Link.Subslice (N + 1, Link'Last));
+                     else
+                        Set_Title
+                          (With_Title'Class (E),
+                           Natools.String_Slices.To_Slice
+                             (Link (N + 1 .. Link'Last) & " "
+                              & Element.Title.To_String));
+                     end if;
+                  end if;
+
+               when Pseudoprotocol.Class =>
+                  if E in With_Identity'Class then
+                     Add_Class
+                       (With_Identity'Class (E),
+                        Natools.String_Slices.To_Slice
+                          (Link (N + 1 .. Link'Last)));
+
+                     declare
+                        Title : constant String := Element.Title.To_String;
+                        M : Natural := Title'First;
+                     begin
+                        loop
+                           N := Fixed.Index
+                             (Title, Tools.Blanks, M, Ada.Strings.Outside);
+                           exit when N = 0;
+                           M := Fixed.Index (Title, Tools.Blanks, N);
+                           if M = 0 then
+                              Add_Class
+                                (With_Identity'Class (E),
+                                 Element.Title.Subslice (N, Title'Last));
+                              exit;
+                           else
+                              Add_Class
+                                (With_Identity'Class (E),
+                                 Element.Title.Subslice (N, M - 1));
+                           end if;
+                        end loop;
+                     end;
+                  end if;
+
+               when Pseudoprotocol.Id =>
+                  if E in With_Identity'Class then
+                     Set_Id
+                       (With_Identity'Class (E),
+                        Element.Link.Subslice (N + 1, Link'Last));
+                  end if;
+
+               when Pseudoprotocol.Raw =>
+                  null;
+            end case;
+
+            E.Open;
+
+            if Scheme = Pseudoprotocol.Raw then
+               E.Append (Link (N + 1 .. Link'Last));
+               if not Element.Title.Is_Empty then
+                  E.Append (" ");
+                  E.Append (Element.Title.To_String);
+               end if;
+            end if;
+         end Process;
+      begin
+         pragma Assert (Element.Backend.Is_Empty);
+
+         N := Fixed.Index (Link, Tools.Alphanumeric_Set, Ada.Strings.Outside);
+         if N /= 0 and then Link (N) = ':' then
+            if Link (Link'First .. N) = "abbr:" then
+               Scheme := Pseudoprotocol.Abbr;
+            elsif Link (Link'First .. N) = "class:" then
+               Scheme := Pseudoprotocol.Class;
+            elsif Link (Link'First .. N) = "id:" then
+               Scheme := Pseudoprotocol.Id;
+            elsif Link (Link'First .. N) = "raw:" then
+               Scheme := Pseudoprotocol.Raw;
+            end if;
+         end if;
+
+         Element.Backend := Element.State.Query.Data.Pseudo_Backend (Scheme);
+         Element.Backend.Update_Element (Process'Access);
+      end Open;
+
+
+      procedure Append (Element : in out Pseudoprotocols; Text : in String) is
+         procedure Process (E : in out Element_Callback'Class);
+
+         procedure Process (E : in out Element_Callback'Class) is
+         begin
+            E.Append (Text);
+         end Process;
+      begin
+         pragma Assert (not Element.Backend.Is_Empty);
+         Element.Backend.Update_Element (Process'Access);
+      end Append;
+
+
+      procedure Close (Element : in out Pseudoprotocols) is
+         procedure Process (E : in out Element_Callback'Class);
+
+         procedure Process (E : in out Element_Callback'Class) is
+         begin
+            E.Close;
+         end Process;
+      begin
+         pragma Assert (not Element.Backend.Is_Empty);
+         Element.Backend.Update_Element (Process'Access);
+         Element.Backend.Clear;
+      end Close;
+
+
+      procedure Set_Link
+        (Element : in out Pseudoprotocols;
+         Link : in Natools.String_Slices.Slice) is
+      begin
+         pragma Assert (Element.Backend.Is_Empty);
+         Element.Link := Link;
+      end Set_Link;
+
+
+      procedure Set_Title
+        (Element : in out Pseudoprotocols;
+         Title : in Natools.String_Slices.Slice) is
+      begin
+         pragma Assert (Element.Backend.Is_Empty);
+         Element.Title := Title;
       end Set_Title;
 
    end Elements;

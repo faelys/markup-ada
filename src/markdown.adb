@@ -66,9 +66,14 @@ begin
    Parser.Escape (Renderer.Raw_Text_Span);
    Parser.Code_Span (Renderer.Code_Span);
    Parser.Discount_Image (Renderer.Image);
-   Parser.Link (Renderer.Anchor);
    Parser.Auto_Link (Renderer.Anchor);
    Parser.Html_Span (Renderer.Raw_Html_Span);
+
+   Parser.Pseudoprotocol_Link (Renderer.Anchor);
+   Parser.Pseudoprotocol_Abbr (Renderer.Abbreviation);
+   Parser.Pseudoprotocol_Class (Renderer.Span);
+   Parser.Pseudoprotocol_Id (Renderer.Anchor);
+   Parser.Pseudoprotocol_Raw (Renderer.Raw_Html_Span);
 
    Read_Text : declare
       use Ada.Streams;
