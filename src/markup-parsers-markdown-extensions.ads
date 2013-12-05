@@ -48,6 +48,19 @@ package Markup.Parsers.Markdown.Extensions is
       Title_Element : in Element_Callback'Class;
       Description_Element : in Element_Callback'Class);
 
+   procedure PME_Table
+     (Parser : in out Extended_Parser;
+      Table_Element : in Element_Callback'Class;
+      Row_Element : in Element_Callback'Class;
+      Cell_Element : in Element_Callback'Class);
+
+   procedure PME_Table
+     (Parser : in out Extended_Parser;
+      Table_Element : in Element_Callback'Class;
+      Row_Element : in Element_Callback'Class;
+      Header_Element : in Element_Callback'Class;
+      Data_Element : in Element_Callback'Class);
+
 
    procedure Pseudoprotocol_Link
      (Parser : in out Extended_Parser;
@@ -147,6 +160,7 @@ private
         (Object : in out Discount_Definitions;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
+
       type PME_Definitions is new Markdown.Tokenizers.Base with record
          Title : Element_Holders.Holder;
          Description : Element_Holders.Holder;
@@ -154,6 +168,15 @@ private
 
       overriding procedure Process
         (Object : in out PME_Definitions;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+
+      type PME_Table is new Markdown.Tokenizers.Base with record
+         Row, Header, Data : Element_Holders.Holder;
+      end record;
+
+      overriding procedure Process
+        (Object : in out PME_Table;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
    end Tokenizers;

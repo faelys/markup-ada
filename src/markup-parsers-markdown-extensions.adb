@@ -15,7 +15,9 @@
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Latin_1;
+with Ada.Containers.Vectors;
 with Ada.Strings.Fixed;
+with Ada.Strings.Maps;
 
 with Markup.Tools;
 
@@ -23,6 +25,7 @@ package body Markup.Parsers.Markdown.Extensions is
 
    package Fixed renames Ada.Strings.Fixed;
    package Latin_1 renames Ada.Characters.Latin_1;
+   package Maps renames Ada.Strings.Maps;
 
 
    ------------------------
@@ -108,6 +111,39 @@ package body Markup.Parsers.Markdown.Extensions is
             Title => Element_Holders.To_Holder (Title_Element),
             Description => Element_Holders.To_Holder (Description_Element)));
    end PME_Definition_List;
+
+
+   procedure PME_Table
+     (Parser : in out Extended_Parser;
+      Table_Element : in Element_Callback'Class;
+      Row_Element : in Element_Callback'Class;
+      Cell_Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer (Tokenizers.PME_Table'
+        (State => Parser.Ref,
+         Backend => Element_Holders.To_Holder (Table_Element),
+         Row => Element_Holders.To_Holder (Row_Element),
+         Header => Element_Holders.Empty_Holder,
+         Data => Element_Holders.To_Holder (Cell_Element)));
+   end PME_Table;
+
+
+   procedure PME_Table
+     (Parser : in out Extended_Parser;
+      Table_Element : in Element_Callback'Class;
+      Row_Element : in Element_Callback'Class;
+      Header_Element : in Element_Callback'Class;
+      Data_Element : in Element_Callback'Class) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer (Tokenizers.PME_Table'
+        (State => Parser.Ref,
+         Backend => Element_Holders.To_Holder (Table_Element),
+         Row => Element_Holders.To_Holder (Row_Element),
+         Header => Element_Holders.To_Holder (Header_Element),
+         Data => Element_Holders.To_Holder (Data_Element)));
+   end PME_Table;
 
 
    procedure Pseudoprotocol_Link
@@ -884,6 +920,307 @@ package body Markup.Parsers.Markdown.Extensions is
             Text.Exclude_Slice (Text.First, Blank_Last);
          else
             pragma Assert (Text.Last = List_Last);
+            Text.Clear;
+         end if;
+      end Process;
+
+
+
+      ------------------------------
+      -- PHP-Markdown-Extra table --
+      ------------------------------
+
+      overriding procedure Process
+        (Object : in out PME_Table;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         package Alignment_Vectors is new Ada.Containers.Vectors
+           (Positive, Alignment);
+
+         function Scan_Block (S : String) return Boolean;
+         function Parse_Bar (S : String) return Boolean;
+         function Render_Line (S : String) return Boolean;
+         procedure Render_Cell
+           (Backend : in out Element_Holders.Holder;
+            First, Last : in Natural;
+            Align : in Alignment);
+
+         Text_First : constant Positive := Text.First;
+         Align : Alignment_Vectors.Vector;
+         Head_Last : Natural := 0;
+         Bar_Last : Natural := 0;
+         Table_Last : Natural := 0;
+         Blank_Last : Natural := 0;
+
+
+         function Parse_Bar (S : String) return Boolean is
+            N : Natural;
+            A : Alignment;
+         begin
+            Align.Clear;
+
+            --  Basic sanity check
+
+            if Fixed.Index
+              (S, Maps."or" (Tools.Blanks, Maps.To_Set ("-:|")),
+               Ada.Strings.Outside) /= 0
+            then
+               return False;
+            end if;
+
+            --  Trim prefix
+
+            N := Fixed.Index (S, Tools.Blanks, Ada.Strings.Outside);
+            if N = 0 then
+               return False;
+            end if;
+
+            --  Iterate over cells
+
+            while N in S'Range loop
+               if S (N) = '|' then
+                  N := N + 1;
+                  exit when N not in S'Range;
+               end if;
+
+               if S (N) = ':' then
+                  A := Left_Aligned;
+               else
+                  A := Default_Align;
+               end if;
+
+               N := Fixed.Index (S, Tools.Blanks, N, Ada.Strings.Outside);
+               exit when N = 0;
+               if S (N) /= '-' then
+                  return False;
+               end if;
+
+               N := Fixed.Index
+                 (S, Maps."or" (Tools.Blanks, Maps.To_Set ('-')),
+                  N, Ada.Strings.Outside);
+               if N /= 0 and then S (N) = ':' then
+                  if A = Default_Align then
+                     A := Right_Aligned;
+                  else
+                     A := Centered_Text;
+                  end if;
+
+                  if N + 1 in S'Range then
+                     N := Fixed.Index
+                       (S, Tools.Blanks, N + 1, Ada.Strings.Outside);
+                     if N /= 0 and then S (N) /= '|' then
+                        return False;
+                     end if;
+                  end if;
+               end if;
+
+               Align.Append (A);
+            end loop;
+
+            return True;
+         end Parse_Bar;
+
+
+         function Scan_Block (S : String) return Boolean is
+         begin
+            if Tools.Is_Blank (S) then
+               Blank_Last := S'Last;
+               return False;
+            elsif Blank_Last > Table_Last then
+               return True;
+            elsif Fixed.Index (S, Maps.To_Set ('|')) = 0 then
+               Table_Last := 0;
+               return True;
+            end if;
+
+            if Table_Last = 0 then
+               if Head_Last = 0 then
+                  if Parse_Bar (S) then
+                     Bar_Last := S'Last;
+                     Table_Last := S'Last;
+                  else
+                     Head_Last := S'Last;
+                  end if;
+               else
+                  if Parse_Bar (S) then
+                     Bar_Last := S'Last;
+                     Table_Last := S'Last;
+                  else
+                     return True;
+                  end if;
+               end if;
+            else
+               Table_Last := S'Last;
+            end if;
+
+            return False;
+         end Scan_Block;
+
+
+         function Render_Line (S : String) return Boolean is
+            N : Natural;
+            A : Alignment;
+            Row : Element_Callback'Class := Object.Row.Element;
+            Cell_First, Cell_Last : Natural;
+            Col : Alignment_Vectors.Cursor := Align.First;
+         begin
+            if S'First > Table_Last then
+               return True;
+            end if;
+
+            if S'First < Bar_Last and S'First > Head_Last then
+               return False;
+            end if;
+
+            Row.Open;
+
+            N := Fixed.Index (S, Tools.Blanks, Ada.Strings.Outside);
+            while N in S'Range loop
+               if S (N) = '|' then
+                  N := N + 1;
+                  exit when N not in S'Range;
+               end if;
+
+               if S (N) = ':' then
+                  N := N + 1;
+                  exit when N not in S'Range;
+                  A := Left_Aligned;
+               else
+                  A := Default_Align;
+               end if;
+
+               Cell_First := Fixed.Index
+                 (S, Tools.Blanks, N, Ada.Strings.Outside);
+               exit when Cell_First = 0;
+
+               N := Cell_First - 2;
+               loop
+                  N := Fixed.Index (S, Maps.To_Set ('|'), N + 2);
+                  if N = 0 then
+                     N := Fixed.Index
+                       (S, Tools.Blanks,
+                        Ada.Strings.Outside, Ada.Strings.Backward);
+                     exit;
+                  else
+                     N := N - 1;
+                     exit when S (N) /= '\';
+                  end if;
+               end loop;
+
+               if S (N) = ':' then
+                  if A = Default_Align then
+                     A := Right_Aligned;
+                  else
+                     A := Centered_Text;
+                  end if;
+
+                  Cell_Last := Fixed.Index
+                    (S, Tools.Blanks, N - 1,
+                     Ada.Strings.Outside, Ada.Strings.Backward);
+               else
+                  Cell_Last := Fixed.Index
+                    (S, Tools.Blanks, N,
+                     Ada.Strings.Outside, Ada.Strings.Backward);
+               end if;
+
+               if Alignment_Vectors.Has_Element (Col) then
+                  if A = Default_Align then
+                     A := Alignment_Vectors.Element (Col);
+                  end if;
+                  Alignment_Vectors.Next (Col);
+               end if;
+
+               if Cell_First < Head_Last
+                 and then not Object.Header.Is_Empty
+               then
+                  Render_Cell (Object.Header, Cell_First, Cell_Last, A);
+               else
+                  Render_Cell (Object.Data, Cell_First, Cell_Last, A);
+               end if;
+
+               N := N + 1;
+            end loop;
+
+            Row.Close;
+            return False;
+         end Render_Line;
+
+
+         procedure Render_Cell
+           (Backend : in out Element_Holders.Holder;
+            First, Last : in Natural;
+            Align : in Alignment)
+         is
+            Element : Element_Callback'Class := Backend.Element;
+            Contents : Natools.String_Slices.Slice_Sets.Slice_Set
+              := Text.Subset (First, Last);
+            M, N : Natural := First;
+         begin
+            --  Remove escapes
+
+            loop
+               N := Contents.Index (Maps.To_Set ('|'), N);
+               exit when N = 0;
+               M := Contents.Previous (N);
+               if M /= 0 and then Contents.Element (M) = '/' then
+                  Contents.Exclude_Slice (M, M);
+               end if;
+               Contents.Next (N);
+               exit when N = 0;
+            end loop;
+
+            --  Set alignment
+
+            if Element in With_Alignment'Class then
+               Set_Alignment (With_Alignment'Class (Element), Align);
+            end if;
+
+            --  Render
+
+            Element.Open;
+            Process_Spans (Object.State.Update.Data.all, Contents, Element);
+            Element.Close;
+         end Render_Cell;
+
+
+         Discarded : Natools.String_Slices.String_Range;
+         pragma Unreferenced (Discarded);
+      begin
+         Discarded := Text.Find_Slice (Scan_Block'Access);
+         if Table_Last = 0 then
+            return;
+         end if;
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            if Element in With_Alignment_List'Class then
+               declare
+                  List : Alignment_Array (1 .. Natural (Align.Length));
+                  Cursor : Alignment_Vectors.Cursor := Align.First;
+               begin
+                  for I in List'Range loop
+                     List (I) := Alignment_Vectors.Element (Cursor);
+                     Alignment_Vectors.Next (Cursor);
+                  end loop;
+
+                  Set_Alignment_List
+                    (With_Alignment_List'Class (Element),
+                     List);
+               end;
+
+               Align.Clear;
+            end if;
+
+            Element.Open;
+            Discarded := Text.Find_Slice (Render_Line'Access);
+            Element.Close;
+         end;
+
+         if Blank_Last > Table_Last then
+            Text.Exclude_Slice (Text_First, Blank_Last);
+         else
+            pragma Assert (Text.Last = Table_Last);
             Text.Clear;
          end if;
       end Process;

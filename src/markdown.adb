@@ -57,6 +57,11 @@ begin
      (Renderer.Definition_List,
       Renderer.Definition_Title,
       Renderer.Definition_Description);
+   Parser.PME_Table
+     (Renderer.Table,
+      Renderer.Table_Row,
+      Renderer.Table_Header_Cell,
+      Renderer.Table_Data_Cell);
    Parser.Discount_Centered (Renderer.Paragraph);
 
    Parser.Emphasis (Renderer.Emphasis, 1);
