@@ -301,4 +301,18 @@ private
      (Element : in out Raw_Data;
       Text : in String);
 
+
+   package Alignment_Array_Refs is new Natools.References
+     (Alignment_Array, Dummy_Access'Storage_Pool, Dummy_Access'Storage_Pool);
+
+   type Html_Table is new Html_Element and With_Alignment_List with record
+      Alignments : Alignment_Array_Refs.Reference;
+   end record;
+
+   overriding procedure Open (Element : in out Html_Table);
+   overriding procedure Set_Alignment_List
+     (Element : in out Html_Table;
+      List : in Alignment_Array);
+
+
 end Markup.Renderers.Html;

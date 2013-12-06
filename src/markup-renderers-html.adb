@@ -50,6 +50,8 @@ package body Markup.Renderers.Html is
       Newline_After_Close : Boolean := False)
       return Html_Double_Element;
 
+   function Image (A : Alignment) return String;
+
 
 
    function Create
@@ -102,6 +104,18 @@ package body Markup.Renderers.Html is
               & Fixed."*" (Html_Tag_Max_Size - Second_Tag'Length, ' '),
             Second_Size => Second_Tag'Length);
    end Create;
+
+
+   function Image (A : Alignment) return String is
+   begin
+      case A is
+         when Default_Align => return "";
+         when Left_Aligned  => return "text-align: left";
+         when Centered_Text => return "text-align: center";
+         when Right_Aligned => return "text-align: right";
+      end case;
+   end Image;
+
 
 
    ----------------------------------
@@ -387,12 +401,7 @@ package body Markup.Renderers.Html is
 
    function Get_Style (Element : in Html_Element) return String is
    begin
-      case Element.Align is
-         when Default_Align => return "";
-         when Left_Aligned  => return "text-align: left";
-         when Centered_Text => return "text-align: center";
-         when Right_Aligned => return "text-align: right";
-      end case;
+      return Image (Element.Align);
    end Get_Style;
 
 
@@ -679,6 +688,63 @@ package body Markup.Renderers.Html is
 
 
 
+   -----------------
+   -- Table token --
+   -----------------
+
+   overriding procedure Open (Element : in out Html_Table) is
+   begin
+      Open (Html_Element (Element));
+
+      if Element.Alignments.Is_Empty then
+         return;
+      end if;
+
+      declare
+         Align : constant Alignment_Array_Refs.Accessor
+           := Element.Alignments.Query;
+      begin
+         for I in Align.Data'Range loop
+            Element.Renderer.Update.Data.Append_Pending_Newline;
+            Append (Element.Renderer.Update.Data.Output, "<col");
+            Element.Renderer.Update.Data.Append_Attribute
+              ("style", Image (Align.Data (I)));
+            Append (Element.Renderer.Update.Data.Output, " />");
+            Element.Renderer.Update.Data.Newline_Pending := True;
+         end loop;
+      end;
+   end Open;
+
+
+   overriding procedure Set_Alignment_List
+     (Element : in out Html_Table;
+      List : in Alignment_Array)
+   is
+      function Save_List return Alignment_Array;
+
+      function Save_List return Alignment_Array is
+      begin
+         return List;
+      end Save_List;
+
+      Has_Explicit : Boolean := False;
+   begin
+      for I in List'Range loop
+         if List (I) /= Default_Align then
+            Has_Explicit := True;
+            exit;
+         end if;
+      end loop;
+
+      if Has_Explicit then
+         Element.Alignments.Replace (Save_List'Access);
+      else
+         Element.Alignments.Reset;
+      end if;
+   end Set_Alignment_List;
+
+
+
    ----------------------------
    -- Block token generators --
    ----------------------------
@@ -771,9 +837,9 @@ package body Markup.Renderers.Html is
 
    function Table (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin
-      return Create (Renderer, "table",
+      return Html_Table'(Create (Renderer, "table",
         Newline_After_Open => True,
-        Newline_After_Close => True);
+        Newline_After_Close => True) with Alignments => <>);
    end Table;
 
 
