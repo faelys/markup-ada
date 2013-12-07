@@ -155,6 +155,73 @@ package body Markup.Parsers is
    end Add_Tokenizer;
 
 
+   procedure Add_Tokenizer_After
+     (Object : in out List_Lexer;
+      T : in Tokenizer'Class;
+      Relative : not null access function
+        (T : Tokenizer'Class) return Boolean)
+   is
+      procedure Check_Object (T : in Tokenizer'Class);
+
+      Is_Relative : Boolean := False;
+
+      procedure Check_Object (T : in Tokenizer'Class) is
+      begin
+         Is_Relative := Relative (T);
+      end Check_Object;
+
+      Current : Tokenizer_Lists.Cursor := Object.List.Last;
+   begin
+      while Tokenizer_Lists.Has_Element (Current) loop
+         Tokenizer_Lists.Query_Element (Current, Check_Object'Access);
+         exit when Is_Relative;
+         Tokenizer_Lists.Previous (Current);
+      end loop;
+
+      if Is_Relative then
+         Tokenizer_Lists.Next (Current);
+         if Tokenizer_Lists.Has_Element (Current) then
+            Object.List.Insert (Current, T);
+         else
+            Object.List.Append (T);
+         end if;
+      else
+         Object.List.Append (T);
+      end if;
+   end Add_Tokenizer_After;
+
+
+   procedure Add_Tokenizer_Before
+     (Object : in out List_Lexer;
+      T : in Tokenizer'Class;
+      Relative : not null access function
+        (T : Tokenizer'Class) return Boolean)
+   is
+      procedure Check_Object (T : in Tokenizer'Class);
+
+      Is_Relative : Boolean := False;
+
+      procedure Check_Object (T : in Tokenizer'Class) is
+      begin
+         Is_Relative := Relative (T);
+      end Check_Object;
+
+      Current : Tokenizer_Lists.Cursor := Object.List.First;
+   begin
+      while Tokenizer_Lists.Has_Element (Current) loop
+         Tokenizer_Lists.Query_Element (Current, Check_Object'Access);
+         exit when Is_Relative;
+         Tokenizer_Lists.Next (Current);
+      end loop;
+
+      if Is_Relative then
+         Object.List.Insert (Current, T);
+      else
+         Object.List.Append (T);
+      end if;
+   end Add_Tokenizer_Before;
+
+
    procedure Process
      (Object : in out List_Lexer;
       Text : in out Natools.String_Slices.Slice_Sets.Slice_Set)

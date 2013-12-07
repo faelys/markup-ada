@@ -61,6 +61,18 @@ package Markup.Parsers is
      (Object : in out List_Lexer;
       T : in Tokenizer'Class);
 
+   procedure Add_Tokenizer_After
+     (Object : in out List_Lexer;
+      T : in Tokenizer'Class;
+      Relative : not null access function
+        (T : Tokenizer'Class) return Boolean);
+
+   procedure Add_Tokenizer_Before
+     (Object : in out List_Lexer;
+      T : in Tokenizer'Class;
+      Relative : not null access function
+        (T : Tokenizer'Class) return Boolean);
+
    procedure Process
      (Object : in out List_Lexer;
       Text : in out Natools.String_Slices.Slice_Sets.Slice_Set);
