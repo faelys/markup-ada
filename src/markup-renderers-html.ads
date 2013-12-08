@@ -66,6 +66,8 @@ package Markup.Renderers.Html is
    function Definition_Title (Renderer : Renderer_Ref)
      return Element_Callback'Class;
 
+   function Division (Renderer : Renderer_Ref) return Element_Callback'Class;
+
    function Header (Renderer : Renderer_Ref) return Element_Callback'Class;
 
    function Horizontal_Rule (Renderer : Renderer_Ref)

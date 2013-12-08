@@ -777,6 +777,14 @@ package body Markup.Renderers.Html is
    end Definition_Title;
 
 
+   function Division (Renderer : Renderer_Ref) return Element_Callback'Class is
+   begin
+      return Create (Renderer, "div",
+        Newline_After_Open => True,
+        Newline_After_Close => True);
+   end Division;
+
+
    function Header (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin
       return Html_Header'(Create (Renderer, "h1", Newline_After_Close => True)
