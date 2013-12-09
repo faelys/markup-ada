@@ -65,6 +65,27 @@ package body Markup.Parsers.Markdown.Extensions is
    end Discount_Centered;
 
 
+   procedure Discount_Class_Block
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class)
+   is
+      function Check_Quote_Block (T : Tokenizer'Class) return Boolean;
+
+      function Check_Quote_Block (T : Tokenizer'Class) return Boolean is
+      begin
+         return T in Markdown.Tokenizers.Quote_Block'Class
+           and then T not in Tokenizers.Discount_Class_Block'Class;
+      end Check_Quote_Block;
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer_Before
+        (Tokenizers.Discount_Class_Block'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element)),
+         Check_Quote_Block'Access);
+   end Discount_Class_Block;
+
+
    procedure Discount_Definition_List
      (Parser : in out Extended_Parser;
       List_Element : in Element_Callback'Class;
@@ -204,6 +225,26 @@ package body Markup.Parsers.Markdown.Extensions is
       Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Raw)
         := Element_Holders.To_Holder (Element);
    end Pseudoprotocol_Raw;
+
+
+   overriding procedure Quote_Block
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class)
+   is
+      function Check_Class_Block (T : Tokenizer'Class) return Boolean;
+
+      function Check_Class_Block (T : Tokenizer'Class) return Boolean is
+      begin
+         return T in Tokenizers.Discount_Class_Block'Class;
+      end Check_Class_Block;
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer_After
+        (Markdown.Tokenizers.Quote_Block'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element)),
+         Check_Class_Block'Access);
+   end Quote_Block;
 
 
 
@@ -591,6 +632,113 @@ package body Markup.Parsers.Markdown.Extensions is
          pragma Assert (N /= 0);
          Text.Exclude_Slice (Text_First, N);
       end Process;
+
+
+      --------------------------------
+      -- Discount-style class block --
+      --------------------------------
+
+      overriding procedure Process
+        (Object : in out Discount_Class_Block;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         function Check_Class (S : String) return Boolean;
+         procedure Add_Class (E : in out Element_Callback'Class);
+
+         Class_First, Class_Last : Natural := 0;
+         Line_Last : Natural := 0;
+
+         function Check_Class (S : String) return Boolean is
+            N : Natural;
+         begin
+            if Line_Last /= 0 then
+               return True;
+            end if;
+
+            Line_Last := S'Last;
+
+            N := Line_Beginning (S);
+            if N not in S'Range or else N + 1 not in S'Range
+              or else S (N) /= '>'
+            then
+               return True;
+            end if;
+
+            N := Fixed.Index (S, Tools.Blanks, N + 1, Ada.Strings.Outside);
+            if N not in S'Range or else S (N) /= '%' then
+               return True;
+            end if;
+            Class_First := N;
+
+            N := Fixed.Index
+              (S, Tools.Blanks, Ada.Strings.Outside, Ada.Strings.Backward);
+            if N not in S'Range or else S (N) /= '%' then
+               return True;
+            end if;
+            Class_Last := N;
+
+            return False;
+         end Check_Class;
+
+
+         procedure Add_Class (E : in out Element_Callback'Class) is
+         begin
+            if E not in With_Identity'Class then
+               return;
+            end if;
+
+            declare
+               First, Next : Natural;
+            begin
+               First := Text.Index
+                 (Tools.Blanks, Class_First + 1, Ada.Strings.Outside);
+
+               while First < Class_Last loop
+                  Next := Text.Index (Tools.Blanks, First);
+                  if Next = 0 or Next > Class_Last then
+                     Next := Class_Last;
+                  end if;
+
+                  Add_Class
+                    (With_Identity'Class (E),
+                     Text.Subset (First, Next - 1).To_Slice);
+
+                  exit when Next >= Class_Last;
+                  First := Text.Index
+                    (Tools.Blanks, Next, Ada.Strings.Outside);
+               end loop;
+            end;
+         end Add_Class;
+
+
+         Discarded : Natools.String_Slices.String_Range;
+         pragma Unreferenced (Discarded);
+      begin
+         Discarded := Text.Find_Slice (Check_Class'Access);
+
+         if Class_Last <= Class_First then
+            return;
+         end if;
+
+         declare
+            Backup : constant Element_Callback'Class := Object.Backend.Element;
+            Processed_Text : Natools.String_Slices.Slice_Sets.Slice_Set
+              := Text;
+         begin
+            Object.Backend.Update_Element (Add_Class'Access);
+            Processed_Text.Exclude_Slice (Class_First, Class_Last);
+            Markdown.Tokenizers.Process
+              (Markdown.Tokenizers.Quote_Block (Object),
+               Processed_Text);
+
+            if Processed_Text.First /= Text.First then
+               Text := Processed_Text;
+            end if;
+
+            Object.Backend.Replace_Element (Backup);
+         end;
+      end Process;
+
 
 
       -------------------------------------
@@ -1228,4 +1376,3 @@ package body Markup.Parsers.Markdown.Extensions is
    end Tokenizers;
 
 end Markup.Parsers.Markdown.Extensions;
-

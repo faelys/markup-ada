@@ -30,6 +30,10 @@ package Markup.Parsers.Markdown.Extensions is
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class);
 
+   procedure Discount_Class_Block
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+
    procedure Discount_Definition_List
      (Parser : in out Extended_Parser;
       List_Element : in Element_Callback'Class;
@@ -82,6 +86,12 @@ package Markup.Parsers.Markdown.Extensions is
    procedure Pseudoprotocol_Raw
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class);
+
+
+   overriding procedure Quote_Block
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class);
+   --  To ensure correct order with Discount_Class_Block
 
 private
 
@@ -149,6 +159,13 @@ private
 
       overriding procedure Process
         (Object : in out Discount_Centered;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+      type Discount_Class_Block is new Markdown.Tokenizers.Quote_Block
+        with null record;
+
+      overriding procedure Process
+        (Object : in out Discount_Class_Block;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
       type Discount_Definitions is new Markdown.Tokenizers.Base with record

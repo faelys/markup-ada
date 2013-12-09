@@ -63,6 +63,7 @@ begin
       Renderer.Table_Header_Cell,
       Renderer.Table_Data_Cell);
    Parser.Discount_Centered (Renderer.Paragraph);
+   Parser.Discount_Class_Block (Renderer.Division);
 
    Parser.Emphasis (Renderer.Emphasis, 1);
    Parser.Emphasis (Renderer.Strong, 2);
