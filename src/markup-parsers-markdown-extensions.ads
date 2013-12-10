@@ -20,6 +20,8 @@
 -- PME stands for syntax inspired from PHP-Markdown-Extra                   --
 ------------------------------------------------------------------------------
 
+with Ada.Strings.Maps;
+
 private with Natools.References;
 
 package Markup.Parsers.Markdown.Extensions is
@@ -39,6 +41,13 @@ package Markup.Parsers.Markdown.Extensions is
       List_Element : in Element_Callback'Class;
       Title_Element : in Element_Callback'Class;
       Description_Element : in Element_Callback'Class);
+
+   procedure Discount_Fenced_Code_Block
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Fence_Charset : in Ada.Strings.Maps.Character_Set
+        := Ada.Strings.Maps.To_Set ("~`");
+      Minimum_Length : in Positive := 4);
 
    procedure Discount_Image
      (Parser : in out Extended_Parser;
@@ -166,6 +175,16 @@ private
 
       overriding procedure Process
         (Object : in out Discount_Class_Block;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+      type Discount_Fenced_Code_Block is new Markdown.Tokenizers.Base
+      with record
+         Fence_Charset : Ada.Strings.Maps.Character_Set;
+         Minimum_Length : Positive;
+      end record;
+
+      overriding procedure Process
+        (Object : in out Discount_Fenced_Code_Block;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
       type Discount_Definitions is new Markdown.Tokenizers.Base with record

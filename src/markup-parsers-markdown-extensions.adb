@@ -17,7 +17,6 @@
 with Ada.Characters.Latin_1;
 with Ada.Containers.Vectors;
 with Ada.Strings.Fixed;
-with Ada.Strings.Maps;
 
 with Markup.Tools;
 
@@ -100,6 +99,23 @@ package body Markup.Parsers.Markdown.Extensions is
             Title => Element_Holders.To_Holder (Title_Element),
             Description => Element_Holders.To_Holder (Description_Element)));
    end Discount_Definition_List;
+
+
+   procedure Discount_Fenced_Code_Block
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Fence_Charset : in Ada.Strings.Maps.Character_Set
+        := Ada.Strings.Maps.To_Set ("~`");
+      Minimum_Length : in Positive := 4) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer
+        (Tokenizers.Discount_Fenced_Code_Block'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element),
+            Fence_Charset => Fence_Charset,
+            Minimum_Length => Minimum_Length));
+   end Discount_Fenced_Code_Block;
 
 
    procedure Discount_Image
@@ -896,6 +912,92 @@ package body Markup.Parsers.Markdown.Extensions is
       end Process;
 
 
+
+      --------------------------------
+      -- Discount Fenced Code Block --
+      --------------------------------
+
+      overriding procedure Process
+        (Object : in out Discount_Fenced_Code_Block;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         function Is_Fence (S : String) return Boolean;
+         function Scan_Block (S : String) return Boolean;
+
+         Text_First : constant Natural := Text.First;
+         Code_First, Code_Last, Blank_Last : Natural := 0;
+
+
+         function Is_Fence (S : String) return Boolean is
+            N : Natural;
+         begin
+            if S'Length < Object.Minimum_Length
+              or else not Maps.Is_In (S (S'First), Object.Fence_Charset)
+            then
+               return False;
+            end if;
+
+            N := Fixed.Index
+              (S, Maps.To_Set (S (S'First)), Ada.Strings.Outside);
+            if N = 0 then
+               return True;
+            end if;
+
+            return N >= S'First + Object.Minimum_Length - 1
+              and then Fixed.Index (S, Tools.Blanks, N, Ada.Strings.Outside)
+                       = 0;
+         end Is_Fence;
+
+
+         function Scan_Block (S : String) return Boolean is
+         begin
+            if S'First = Text_First then
+               return not Is_Fence (S);
+
+            elsif Is_Fence (S) then
+               Code_Last := Text.Previous (S'First);
+               Blank_Last := S'Last;
+
+            elsif Code_Last > 0 then
+               if Tools.Is_Blank (S) then
+                  Blank_Last := S'Last;
+               else
+                  return True;
+               end if;
+            end if;
+
+            if Code_First = 0 then
+               Code_First := S'First;
+            end if;
+
+            return False;
+         end Scan_Block;
+
+         Discarded : Natools.String_Slices.String_Range;
+         pragma Unreferenced (Discarded);
+      begin
+         Discarded := Text.Find_Slice (Scan_Block'Access);
+
+         if Code_Last = 0 then
+            return;
+         end if;
+
+         declare
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            Element.Open;
+            Element.Append (Text.To_String (Code_First, Code_Last));
+            Element.Close;
+         end;
+
+         Text.Exclude_Slice (Text_First, Blank_Last);
+      end Process;
+
+
+
+      ----------------------------------------
+      -- PHP-Markdown-Extra Definition List --
+      ----------------------------------------
 
       overriding procedure Process
         (Object : in out PME_Definitions;
