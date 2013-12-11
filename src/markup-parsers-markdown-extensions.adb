@@ -925,14 +925,16 @@ package body Markup.Parsers.Markdown.Extensions is
          function Scan_Block (S : String) return Boolean;
 
          Text_First : constant Natural := Text.First;
+         Level : Positive := Object.Minimum_Length;
+         Charset : Maps.Character_Set := Object.Fence_Charset;
          Code_First, Code_Last, Blank_Last : Natural := 0;
 
 
          function Is_Fence (S : String) return Boolean is
             N : Natural;
          begin
-            if S'Length < Object.Minimum_Length
-              or else not Maps.Is_In (S (S'First), Object.Fence_Charset)
+            if S'Length < Level
+              or else not Maps.Is_In (S (S'First), Charset)
             then
                return False;
             end if;
@@ -943,9 +945,16 @@ package body Markup.Parsers.Markdown.Extensions is
                return True;
             end if;
 
-            return N >= S'First + Object.Minimum_Length - 1
+            if N - S'First + 1 >= Level
               and then Fixed.Index (S, Tools.Blanks, N, Ada.Strings.Outside)
-                       = 0;
+                       = 0
+            then
+               Level := N - S'First + 1;
+               Charset := Maps.To_Set (S (S'First));
+               return True;
+            else
+               return False;
+            end if;
          end Is_Fence;
 
 
