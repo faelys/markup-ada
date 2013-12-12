@@ -636,6 +636,10 @@ package body Markup.Parsers.Markdown.Extensions is
 
          --  Clean up processed text
 
+         if Blank.Length = 0 then
+            Text.Clear;
+            return;
+         end if;
          N := Text.Index
            (Tools.Blanks, Natools.String_Slices.Last (Blank),
             Ada.Strings.Outside);
