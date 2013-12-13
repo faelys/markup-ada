@@ -162,3 +162,101 @@ The title in a reference entry can be on the next line with an indentation,
 
 Autolinks are a URL inserted directly into the text, surrounded by
 angle bracks (`<` … `>`), like <http://example.com>.
+
+# Extensions
+
+## Inspired from PHP-Markdown-Extra
+
+The following few extensions from [PHP-Markdown-Extra]
+(http://michelf.ca/projects/php-markdown/extra/) are available,
+mainly to allow complete Discount support (see below):
+
+* Definition lists, with single-line unindented terms and
+colon-prefixed (`:`) definitions:
+
+    term1
+
+    :   First definition.
+
+        Second pragraph of first definition.
+
+    term2
+    alternate term2
+    :   Second definition.
+
+* Tables, using pipe signs (`|`) as column separators, and a line
+containing only pipe signs, dashes (`-`) and blanks as header, either as
+first line (for headerless tables) or as second line. Leading and trailing
+pipe signs are optional, but to be considered as a table each line of the
+block must have at least one pipe sign.
+
+    To include a litteral pipe sign inside a cell, preceed it with a
+backslash (`\`), even when there should be no need for an escape (e.g.
+because it is inside a code span).
+
+    Optionnally the pipe sign can be immediately preceeded or followed by
+a colon (`:`) to indicate alignment of adjacent cells. A colon on the
+left side means left-aligned, on the right side for right-aligned and on
+both sides for centered. Specifying an alignment in the dash-only line sets
+alignment for the whole column.
+
+| First Header  | Second Header | Centered column |
+| ------------- | ------------- |: ---------------------- :|
+| Content Cell  | Content Cell  | Cell with a pipe (`\|`)  |
+| Content Cell  | Content Cell  | Right-aligned override  :|
+
+
+
+## Inspired from Discount
+
+Almost all extensions supported by [Discount](http://www.pell.portland.or.us/~orc/Code/discount/) are supported:
+
+* -> Centered paragraph, between arrows (`->` … `<-`). <-
+
+* Images with size specification, by adding at the end of the title text both
+numbers, separated by a lower-case X character (`x`) and following an equal
+sign (`=`), without any blank.
+
+    ![alt text of image with explicit size]
+    (http://example.com/image.png "title text =150x100")
+
+* Definition lists, with terms on a single line, between equal signs (`=`)
+and definitions as indented lines:
+
+    =term1=
+        First definition.
+
+        Second paragraph of first definition.
+
+    =term2=
+    =alternate term2=
+        Second definition
+
+* Pseudoprotocol links: when a special string is used as scheme in the
+link URL, the element is rendered differently:
+
+    * `abbr:`_description_ for abbreviations
+      like [CSS](abbr:Cascading Style Sheets),
+    * `class:`_name_ for [span tags](class:css-style) with the given class(es),
+    * `id:`_name_ for an [anchor](id:id-pseudoprotocol) with the given id,
+    * `raw:`_text_ for [](raw:unprocessed) text insertion.
+
+*   > %css-style%
+    > Class blocks, that look like quote blocks whose first line
+    is a list of CSS classes between percent signs (`%`).
+
+* Fenced code block, with nothing but at least 4 occurrences of a single
+fence character (backtick (`` ` ``) or tilde (`~`)) on the first line and
+the last line of the code block.
+
+    At least as many fence characters must be used for closing as for
+opening the code block, to allow escaping lines containing only the fencing
+charater
+
+    ~~~~~~
+
+    This is a code block opened by 6 tildes.
+    ~~~~~
+    The line above is inside the code block, but not the line below.
+
+    ~~~~~~~
