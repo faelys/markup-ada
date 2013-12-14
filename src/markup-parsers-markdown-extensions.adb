@@ -1248,6 +1248,8 @@ package body Markup.Parsers.Markdown.Extensions is
 
                if S (N) = ':' then
                   A := Left_Aligned;
+                  N := N + 1;
+                  exit when N not in S'Range;
                else
                   A := Default_Align;
                end if;
