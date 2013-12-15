@@ -1358,17 +1358,21 @@ package body Markup.Parsers.Markdown.Extensions is
                  (S, Tools.Blanks, N, Ada.Strings.Outside);
                exit when Cell_First = 0;
 
-               N := Cell_First - 2;
+               N := Cell_First;
                loop
-                  N := Fixed.Index (S, Maps.To_Set ('|'), N + 2);
+                  N := Fixed.Index (S, Maps.To_Set ('|'), N);
                   if N = 0 then
                      N := Fixed.Index
                        (S, Tools.Blanks,
                         Ada.Strings.Outside, Ada.Strings.Backward);
                      exit;
-                  else
+                  elsif N - 1 < Cell_First or else S (N - 1) /= '\' then
                      N := N - 1;
-                     exit when S (N) /= '\';
+                     exit;
+                  elsif N + 1 not in S'Range then
+                     exit;
+                  else
+                     N := N + 1;
                   end if;
                end loop;
 
