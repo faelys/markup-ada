@@ -185,6 +185,7 @@ package body Markup.Renderers.Html is
          return;
       end if;
 
+      State.Beginning_Of_Line := False;
       Append (State.Output, " ");
       Append (State.Output, Name);
       Append (State.Output, "=""");
@@ -242,6 +243,7 @@ package body Markup.Renderers.Html is
          end if;
          if Position < N then
             Append (State.Output, Text (Position .. N - 1));
+            State.Beginning_Of_Line := False;
          end if;
          Position := N;
          exit when Position not in Text'First .. Last;
@@ -261,6 +263,7 @@ package body Markup.Renderers.Html is
                   when '>' => Append (State.Output, "&gt;");
                   when others => raise Program_Error;
                end case;
+               State.Beginning_Of_Line := False;
             end loop;
          end if;
          Position := N;
@@ -268,15 +271,22 @@ package body Markup.Renderers.Html is
    end Append_Text;
 
 
-   procedure Append_Newline
-     (State : in out Renderer_Data;
-      Indent : in Boolean := False)
-   is
+   procedure Append_Indent (State : in out Renderer_Data) is
+   begin
+      if State.Beginning_Of_Line and State.Indent_Level > 0 then
+         Append (State.Output, Fixed."*" (State.Indent_Level, "  "));
+         State.Beginning_Of_Line := False;
+      end if;
+   end Append_Indent;
+
+
+   procedure Append_Newline (State : in out Renderer_Data) is
       Marker : Newline_Format := State.Newline;
    begin
       if State.Newline = Autodetect then
          Marker := State.Autodetected;
       end if;
+
       case Marker is
          when CR    => Append (State.Output, (1 => L1.CR));
          when LF    => Append (State.Output, (1 => L1.LF));
@@ -284,11 +294,9 @@ package body Markup.Renderers.Html is
          when LF_CR => Append (State.Output, L1.LF & L1.CR);
          when Autodetect => null;
       end case;
-      State.Newline_Pending := False;
 
-      if Indent and State.Indent_Level > 0 then
-         Append (State.Output, Fixed."*" (State.Indent_Level, "  "));
-      end if;
+      State.Newline_Pending := False;
+      State.Beginning_Of_Line := True;
    end Append_Newline;
 
 
@@ -320,10 +328,12 @@ package body Markup.Renderers.Html is
       end if;
 
       if Element.Newline_Before_Open then
-         Element.Renderer.Update.Data.Append_Newline (Indent => True);
+         Element.Renderer.Update.Data.Append_Newline;
       else
          Element.Renderer.Update.Data.Append_Pending_Newline;
       end if;
+
+      Element.Renderer.Update.Data.Append_Indent;
 
       Append
         (Element.Renderer.Update.Data.Output,
@@ -353,8 +363,10 @@ package body Markup.Renderers.Html is
       Element.Renderer.Update.Data.Update_Indent (-1);
 
       if Element.Newline_Before_Close then
-         Element.Renderer.Update.Data.Append_Newline (Indent => True);
+         Element.Renderer.Update.Data.Append_Newline;
       end if;
+
+      Element.Renderer.Update.Data.Append_Indent;
 
       if Element.Self_Closing then
          Append (Element.Renderer.Update.Data.Output, " />");
@@ -647,8 +659,10 @@ package body Markup.Renderers.Html is
       Newline_Before : constant Boolean := Element.Newline_Before_Close;
    begin
       if Element.Newline_Before_Close then
-         Element.Renderer.Update.Data.Append_Newline (Indent => True);
+         Element.Renderer.Update.Data.Append_Newline;
       end if;
+
+      Element.Renderer.Update.Data.Append_Indent;
 
       Append
         (Element.Renderer.Update.Data.Output,
@@ -683,6 +697,7 @@ package body Markup.Renderers.Html is
          Element.Renderer.Update.Data.Append_Text (Text);
       else
          Append (Element.Renderer.Update.Data.Output, Text);
+         Element.Renderer.Update.Data.Beginning_Of_Line := False;
       end if;
    end Append;
 
@@ -706,6 +721,7 @@ package body Markup.Renderers.Html is
       begin
          for I in Align.Data'Range loop
             Element.Renderer.Update.Data.Append_Pending_Newline;
+            Element.Renderer.Update.Data.Append_Indent;
             Append (Element.Renderer.Update.Data.Output, "<col");
             Element.Renderer.Update.Data.Append_Attribute
               ("style", Image (Align.Data (I)));

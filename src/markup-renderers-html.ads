@@ -137,6 +137,7 @@ private
       Newline : Newline_Format := Autodetect;
       Autodetected : Newline_Format := Autodetect;
       Newline_Pending : Boolean := False;
+      Beginning_Of_Line : Boolean := True;
       Indent_Level : Natural := 0;
    end record;
 
@@ -154,9 +155,10 @@ private
       Escape_Quotes : in Boolean := False);
    --  Escape the given text and output it
 
-   procedure Append_Newline
-     (State : in out Renderer_Data;
-      Indent : in Boolean := False);
+   procedure Append_Indent (State : in out Renderer_Data);
+   --  Output indentation when immediately after newline
+
+   procedure Append_Newline (State : in out Renderer_Data);
    --  Output a newline if format is known
 
    procedure Append_Pending_Newline (State : in out Renderer_Data);
