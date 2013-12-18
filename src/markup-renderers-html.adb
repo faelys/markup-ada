@@ -327,7 +327,9 @@ package body Markup.Renderers.Html is
          raise Program_Error with "Opening an already-opened token";
       end if;
 
-      if Element.Newline_Before_Open then
+      if Element.Newline_Before_Open
+        and then not Element.Renderer.Query.Data.Beginning_Of_Line
+      then
          Element.Renderer.Update.Data.Append_Newline;
       else
          Element.Renderer.Update.Data.Append_Pending_Newline;
@@ -362,7 +364,9 @@ package body Markup.Renderers.Html is
 
       Element.Renderer.Update.Data.Update_Indent (-1);
 
-      if Element.Newline_Before_Close then
+      if Element.Newline_Before_Close
+        and then not Element.Renderer.Query.Data.Beginning_Of_Line
+      then
          Element.Renderer.Update.Data.Append_Newline;
       end if;
 
@@ -658,7 +662,9 @@ package body Markup.Renderers.Html is
    overriding procedure Close (Element : in out Html_Double_Element) is
       Newline_Before : constant Boolean := Element.Newline_Before_Close;
    begin
-      if Element.Newline_Before_Close then
+      if Element.Newline_Before_Close
+        and then not Element.Renderer.Query.Data.Beginning_Of_Line
+      then
          Element.Renderer.Update.Data.Append_Newline;
       end if;
 
