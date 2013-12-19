@@ -774,19 +774,24 @@ package body Markup.Renderers.Html is
    function Code_Block (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "pre", "code", Newline_After_Close => True);
+      return Create (Renderer, "pre", "code",
+         Newline_Before_Open => True,
+         Newline_After_Close => True);
    end Code_Block;
 
    function Definition_Description (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "dd", Newline_After_Close => True);
+      return Create (Renderer, "dd",
+         Newline_Before_Open => True,
+         Newline_After_Close => True);
    end Definition_Description;
 
    function Definition_List (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
       return Create (Renderer, "dl",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
         Newline_Before_Close => True,
         Newline_After_Close => True);
@@ -795,21 +800,27 @@ package body Markup.Renderers.Html is
    function Definition_Title (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "dt", Newline_After_Close => True);
+      return Create (Renderer, "dt",
+         Newline_Before_Open => True,
+         Newline_After_Close => True);
    end Definition_Title;
 
 
    function Division (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin
       return Create (Renderer, "div",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
+        Newline_Before_Close => True,
         Newline_After_Close => True);
    end Division;
 
 
    function Header (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin
-      return Html_Header'(Create (Renderer, "h1", Newline_After_Close => True)
+      return Html_Header'(Create (Renderer, "h1",
+         Newline_Before_Open => True,
+         Newline_After_Close => True)
         with null record);
    end Header;
 
@@ -818,6 +829,7 @@ package body Markup.Renderers.Html is
      return Element_Callback'Class is
    begin
       return Create (Renderer, "hr",
+        Newline_Before_Open => True,
         Newline_After_Close => True,
         Self_Closing => True);
    end Horizontal_Rule;
@@ -826,7 +838,9 @@ package body Markup.Renderers.Html is
    function List_Item (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "li", Newline_After_Close => True);
+      return Create (Renderer, "li",
+        Newline_Before_Open => True,
+        Newline_After_Close => True);
    end List_Item;
 
 
@@ -834,6 +848,7 @@ package body Markup.Renderers.Html is
      return Element_Callback'Class is
    begin
       return Create (Renderer, "ol",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
         Newline_Before_Close => True,
         Newline_After_Close => True);
@@ -843,7 +858,9 @@ package body Markup.Renderers.Html is
    function Paragraph (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "p", Newline_After_Close => True);
+      return Create (Renderer, "p",
+        Newline_Before_Open => True,
+        Newline_After_Close => True);
    end Paragraph;
 
 
@@ -851,7 +868,9 @@ package body Markup.Renderers.Html is
      return Element_Callback'Class is
    begin
       return Create (Renderer, "blockquote",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
+        Newline_Before_Close => True,
         Newline_After_Close => True);
    end Quote_Block;
 
@@ -868,7 +887,9 @@ package body Markup.Renderers.Html is
    function Table (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin
       return Html_Table'(Create (Renderer, "table",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
+        Newline_Before_Close => True,
         Newline_After_Close => True) with Alignments => <>);
    end Table;
 
@@ -876,14 +897,18 @@ package body Markup.Renderers.Html is
    function Table_Data_Cell (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "td", Newline_After_Close => True);
+      return Create (Renderer, "td",
+         Newline_Before_Open => True,
+         Newline_After_Close => True);
    end Table_Data_Cell;
 
 
    function Table_Header_Cell (Renderer : Renderer_Ref)
      return Element_Callback'Class is
    begin
-      return Create (Renderer, "th", Newline_After_Close => True);
+      return Create (Renderer, "th",
+         Newline_Before_Open => True,
+         Newline_After_Close => True);
    end Table_Header_Cell;
 
 
@@ -891,7 +916,9 @@ package body Markup.Renderers.Html is
      return Element_Callback'Class is
    begin
       return Create (Renderer, "tr",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
+        Newline_Before_Close => True,
         Newline_After_Close => True);
    end Table_Row;
 
@@ -900,7 +927,9 @@ package body Markup.Renderers.Html is
      return Element_Callback'Class is
    begin
       return Create (Renderer, "ul",
+        Newline_Before_Open => True,
         Newline_After_Open => True,
+        Newline_Before_Close => True,
         Newline_After_Close => True);
    end Unordered_List;
 
