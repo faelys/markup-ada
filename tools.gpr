@@ -1,0 +1,17 @@
+with "markup";
+
+project Tools is
+   for Source_Dirs use ("tools");
+   for Main use ("markdown.adb");
+
+   for Object_Dir use Markup'Object_Dir;
+   for Exec_Dir use Markup'Exec_Dir;
+
+   package Compiler is
+      for Default_Switches use Markup.Compiler'Default_Switches;
+   end Compiler;
+
+   package Linker is
+      for Default_Switches use Markup.Linker'Default_Switches;
+   end Linker;
+end Tools;
