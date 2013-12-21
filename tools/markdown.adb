@@ -20,7 +20,8 @@ with Ada.Strings.Unbounded;
 
 with Natools.String_Slices;
 with Markup.Parsers.Markdown.Extensions;
-with Markup.Renderers.Instances;
+
+with Instances;
 
 procedure Markdown is
 
@@ -28,7 +29,7 @@ procedure Markdown is
      := Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Current_Input);
 
    Parser : Markup.Parsers.Markdown.Extensions.Extended_Parser;
-   Renderer : Markup.Renderers.Instances.Html_Stream.Renderer_Ref;
+   Renderer : Instances.Html_Stream.Renderer_Ref;
 
    Text : Natools.String_Slices.Slice;
 begin

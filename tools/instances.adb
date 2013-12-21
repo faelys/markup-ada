@@ -14,7 +14,7 @@
 -- OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           --
 ------------------------------------------------------------------------------
 
-package body Markup.Renderers.Instances is
+package body Instances is
 
    procedure Append
      (To : in out Ada.Text_IO.Text_Streams.Stream_Access;
@@ -25,5 +25,5 @@ package body Markup.Renderers.Instances is
       String'Write (To, Text);
    end Append;
 
-end Markup.Renderers.Instances;
+end Instances;
 

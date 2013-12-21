@@ -18,7 +18,7 @@ with Ada.Text_IO.Text_Streams;
 
 with Markup.Renderers.Html;
 
-package Markup.Renderers.Instances is
+package Instances is
 
    procedure Append
      (To : in out Ada.Text_IO.Text_Streams.Stream_Access;
@@ -27,4 +27,4 @@ package Markup.Renderers.Instances is
    package Html_Stream is new Markup.Renderers.Html
      (Ada.Text_IO.Text_Streams.Stream_Access);
 
-end Markup.Renderers.Instances;
+end Instances;
