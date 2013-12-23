@@ -20,6 +20,7 @@ with Ada.Streams;
 with Ada.Streams.Stream_IO;
 with Ada.Strings.Unbounded;
 
+with Natools.Getopt_Long;
 with Natools.String_Slices;
 with Markup.Parsers.Markdown.Extensions;
 
@@ -31,7 +32,97 @@ procedure Markdown is
      (Input : in out Ada.Streams.Root_Stream_Type'Class);
 
 
+   package Options is
+      type Id is (Help);
+      type Action is (Error, Print_Help, Run);
+
+      package Getopt is new Natools.Getopt_Long (Id);
+
+      function Config return Getopt.Configuration;
+
+      type State is new Getopt.Handlers.Callback with record
+         Action : Options.Action := Run;
+         Arg_Count : Natural := 0;
+      end record;
+
+      overriding procedure Option
+        (Handler  : in out State;
+         Id       : in Options.Id;
+         Argument : in String);
+
+      overriding procedure Argument
+        (Handler  : in out State;
+         Argument : in String);
+   end Options;
+
+
+   procedure Print_Help
+     (Config : in Options.Getopt.Configuration;
+      Output : in Ada.Text_IO.File_Type);
+
+
+   package body Options is
+      function Config return Getopt.Configuration is
+         use Getopt;
+         Result : Getopt.Configuration;
+      begin
+         Result.Add_Option ("help", 'h', No_Argument, Help);
+         return Result;
+      end Config;
+
+
+      overriding procedure Option
+        (Handler  : in out State;
+         Id       : in Options.Id;
+         Argument : in String)
+      is
+         pragma Unreferenced (Argument);
+      begin
+         case Id is
+            when Help =>
+               Handler.Action := Print_Help;
+         end case;
+      end Option;
+
+
+      overriding procedure Argument
+        (Handler  : in out State;
+         Argument : in String) is
+      begin
+         if Handler.Action = Run then
+            Process_File (Argument);
+            Handler.Arg_Count := Handler.Arg_Count + 1;
+         end if;
+      end Argument;
+   end Options;
+
+
    Renderer : Instances.Html_Stream.Renderer_Ref;
+
+
+   procedure Print_Help
+     (Config : in Options.Getopt.Configuration;
+      Output : in Ada.Text_IO.File_Type)
+   is
+      use Ada.Text_IO;
+      Indent : constant String := "    ";
+   begin
+      Put_Line (Output,
+        "Usage: " & Ada.Command_Line.Command_Name
+        & " [-h] [source_file]");
+      New_Line (Output);
+      Put_Line (Output, "Options:");
+
+      for Id in Options.Id loop
+         Put_Line (Output, Indent & Config.Format_Names (Id));
+
+         case Id is
+            when Options.Help =>
+               Put_Line (Output, Indent & Indent
+                 & "Show this help text");
+         end case;
+      end loop;
+   end Print_Help;
 
 
    procedure Process_File (Filename : in String) is
@@ -130,14 +221,29 @@ procedure Markdown is
       Parser.Process (Text);
    end Process_Stream;
 
+
+   Opt : Options.State;
+   Config : constant Options.Getopt.Configuration := Options.Config;
+
+   use type Options.Action;
 begin
    Renderer.Set_Output (Ada.Text_IO.Text_Streams.Stream
      (Ada.Text_IO.Current_Output));
 
-   if Ada.Command_Line.Argument_Count >= 1 then
-      Process_File (Ada.Command_Line.Argument (1));
-   else
-      Process_File ("-");
+   Config.Process (Opt);
+
+   if Opt.Arg_Count = 0 and Opt.Action = Options.Run then
+      Opt.Action := Options.Error;
    end if;
+
+   case Opt.Action is
+      when Options.Error =>
+         Print_Help (Config, Ada.Text_IO.Current_Error);
+         Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+      when Options.Print_Help =>
+         Print_Help (Config, Ada.Text_IO.Current_Output);
+      when Options.Run =>
+         null;
+   end case;
 end Markdown;
 
