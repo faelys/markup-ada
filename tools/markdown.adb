@@ -33,8 +33,11 @@ procedure Markdown is
 
 
    package Options is
-      type Id is (Help);
       type Action is (Error, Print_Help, Run);
+      type Id is
+        (Help,
+         Html_Output,
+         Xhtml_Output);
 
       package Getopt is new Natools.Getopt_Long (Id);
 
@@ -43,6 +46,8 @@ procedure Markdown is
       type State is new Getopt.Handlers.Callback with record
          Action : Options.Action := Run;
          Arg_Count : Natural := 0;
+         Output_Format : Instances.Html_Stream.Output_Format
+           := Instances.Html_Stream.Html;
       end record;
 
       overriding procedure Option
@@ -66,7 +71,9 @@ procedure Markdown is
          use Getopt;
          Result : Getopt.Configuration;
       begin
-         Result.Add_Option ("help", 'h', No_Argument, Help);
+         Result.Add_Option ("help",  'h', No_Argument, Help);
+         Result.Add_Option ("html",  'H', No_Argument, Html_Output);
+         Result.Add_Option ("xhtml", 'x', No_Argument, Xhtml_Output);
          return Result;
       end Config;
 
@@ -81,6 +88,10 @@ procedure Markdown is
          case Id is
             when Help =>
                Handler.Action := Print_Help;
+            when Html_Output =>
+               Handler.Output_Format := Instances.Html_Stream.Html;
+            when Xhtml_Output =>
+               Handler.Output_Format := Instances.Html_Stream.Xhtml;
          end case;
       end Option;
 
@@ -98,6 +109,7 @@ procedure Markdown is
 
 
    Renderer : Instances.Html_Stream.Renderer_Ref;
+   Opt : Options.State;
 
 
    procedure Print_Help
@@ -120,6 +132,12 @@ procedure Markdown is
             when Options.Help =>
                Put_Line (Output, Indent & Indent
                  & "Show this help text");
+            when Options.Html_Output =>
+               Put_Line (Output, Indent & Indent
+                 & "Output HTML-style self-closing tags (e.g. <br>)");
+            when Options.Xhtml_Output =>
+               Put_Line (Output, Indent & Indent
+                 & "Output XHTML-style self-closing tags (e.g. <br />)");
          end case;
       end loop;
    end Print_Help;
@@ -152,6 +170,8 @@ procedure Markdown is
 
       Text : Natools.String_Slices.Slice;
    begin
+      Renderer.Set_Format (Opt.Output_Format);
+
       Parser.Atx_Header (Renderer.Header);
       Parser.Code_Block (Renderer.Code_Block);
       Parser.Horizontal_Rule (Renderer.Horizontal_Rule);
@@ -222,7 +242,6 @@ procedure Markdown is
    end Process_Stream;
 
 
-   Opt : Options.State;
    Config : constant Options.Getopt.Configuration := Options.Config;
 
    use type Options.Action;
