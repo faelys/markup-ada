@@ -373,7 +373,12 @@ package body Markup.Renderers.Html is
       Element.Renderer.Update.Data.Append_Indent;
 
       if Element.Self_Closing then
-         Append (Element.Renderer.Update.Data.Output, " />");
+         case Element.Renderer.Query.Data.Format is
+            when Html =>
+               Append (Element.Renderer.Update.Data.Output, ">");
+            when Xhtml =>
+               Append (Element.Renderer.Update.Data.Output, " />");
+         end case;
       else
          Append
            (Element.Renderer.Update.Data.Output,
@@ -731,7 +736,13 @@ package body Markup.Renderers.Html is
             Append (Element.Renderer.Update.Data.Output, "<col");
             Element.Renderer.Update.Data.Append_Attribute
               ("style", Image (Align.Data (I)));
-            Append (Element.Renderer.Update.Data.Output, " />");
+
+            case Element.Renderer.Query.Data.Format is
+               when Html =>
+                  Append (Element.Renderer.Update.Data.Output, ">");
+               when Xhtml =>
+                  Append (Element.Renderer.Update.Data.Output, " />");
+            end case;
             Element.Renderer.Update.Data.Newline_Pending := True;
          end loop;
       end;
