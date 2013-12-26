@@ -27,6 +27,7 @@ with Markup.Parsers.Markdown.Extensions;
 with Instances;
 
 procedure Markdown is
+   function Make_Parser return Markup.Parsers.Markdown.Markdown_Parser'Class;
    procedure Process_File (Filename : in String);
    procedure Process_Stream
      (Input : in out Ada.Streams.Root_Stream_Type'Class);
@@ -34,8 +35,11 @@ procedure Markdown is
 
    package Options is
       type Action is (Error, Print_Help, Run);
+      type Input_Format is (Official, Discount);
       type Id is
-        (Help,
+        (Discount_Input,
+         Help,
+         Markdown_Input,
          Html_Output,
          Xhtml_Output);
 
@@ -48,6 +52,7 @@ procedure Markdown is
          Arg_Count : Natural := 0;
          Output_Format : Instances.Html_Stream.Output_Format
            := Instances.Html_Stream.Html;
+         Input_Format : Options.Input_Format := Official;
       end record;
 
       overriding procedure Option
@@ -71,9 +76,11 @@ procedure Markdown is
          use Getopt;
          Result : Getopt.Configuration;
       begin
-         Result.Add_Option ("help",  'h', No_Argument, Help);
-         Result.Add_Option ("html",  'H', No_Argument, Html_Output);
-         Result.Add_Option ("xhtml", 'x', No_Argument, Xhtml_Output);
+         Result.Add_Option ("discount",  'd', No_Argument, Discount_Input);
+         Result.Add_Option ("help",      'h', No_Argument, Help);
+         Result.Add_Option ("html",      'H', No_Argument, Html_Output);
+         Result.Add_Option ("markdown",  'm', No_Argument, Markdown_Input);
+         Result.Add_Option ("xhtml",     'x', No_Argument, Xhtml_Output);
          return Result;
       end Config;
 
@@ -86,10 +93,14 @@ procedure Markdown is
          pragma Unreferenced (Argument);
       begin
          case Id is
+            when Discount_Input =>
+               Handler.Input_Format := Discount;
             when Help =>
                Handler.Action := Print_Help;
             when Html_Output =>
                Handler.Output_Format := Instances.Html_Stream.Html;
+            when Markdown_Input =>
+               Handler.Input_Format := Official;
             when Xhtml_Output =>
                Handler.Output_Format := Instances.Html_Stream.Xhtml;
          end case;
@@ -112,6 +123,64 @@ procedure Markdown is
    Opt : Options.State;
 
 
+   function Make_Parser return Markup.Parsers.Markdown.Markdown_Parser'Class is
+   begin
+      return Parser : Markup.Parsers.Markdown.Extensions.Extended_Parser do
+         Parser.Atx_Header (Renderer.Header);
+         Parser.Code_Block (Renderer.Code_Block);
+         Parser.Horizontal_Rule (Renderer.Horizontal_Rule);
+         Parser.Html_Block (Renderer.Raw_Html_Block);
+         Parser.Html_Tag_Block (Renderer.Raw_Html_Block);
+         Parser.Html_Comment_Block (Renderer.Raw_Html_Block);
+         Parser.List (Renderer.Ordered_List, Renderer.List_Item,
+                      Markup.Parsers.Markdown.Styles.Ordered);
+         Parser.List (Renderer.Unordered_List, Renderer.List_Item,
+                      Markup.Parsers.Markdown.Styles.Unordered);
+         Parser.Paragraph (Renderer.Paragraph);
+         Parser.Quote_Block (Renderer.Quote_Block);
+         Parser.Setext_Header (Renderer.Header);
+
+         Parser.Emphasis (Renderer.Emphasis, 1);
+         Parser.Emphasis (Renderer.Strong, 2);
+         Parser.Emphasis (Renderer.Strong_Emphasis, 3);
+         Parser.Entity (Renderer.Raw_Html_Span);
+         Parser.Escape (Renderer.Raw_Text_Span);
+         Parser.Code_Span (Renderer.Code_Span);
+         Parser.Discount_Image (Renderer.Image);
+         Parser.Auto_Link (Renderer.Anchor);
+         Parser.Html_Span (Renderer.Raw_Html_Span);
+
+         case Opt.Input_Format is
+            when Options.Official =>
+               null;
+            when Options.Discount =>
+               Parser.Discount_Definition_List
+                 (Renderer.Definition_List,
+                  Renderer.Definition_Title,
+                  Renderer.Definition_Description);
+               Parser.PME_Definition_List
+                 (Renderer.Definition_List,
+                  Renderer.Definition_Title,
+                  Renderer.Definition_Description);
+               Parser.PME_Table
+                 (Renderer.Table,
+                  Renderer.Table_Row,
+                  Renderer.Table_Header_Cell,
+                  Renderer.Table_Data_Cell);
+               Parser.Discount_Centered (Renderer.Paragraph);
+               Parser.Discount_Class_Block (Renderer.Division);
+               Parser.Discount_Fenced_Code_Block (Renderer.Code_Block);
+
+               Parser.Pseudoprotocol_Link (Renderer.Anchor);
+               Parser.Pseudoprotocol_Abbr (Renderer.Abbreviation);
+               Parser.Pseudoprotocol_Class (Renderer.Span);
+               Parser.Pseudoprotocol_Id (Renderer.Anchor);
+               Parser.Pseudoprotocol_Raw (Renderer.Raw_Html_Span);
+         end case;
+      end return;
+   end Make_Parser;
+
+
    procedure Print_Help
      (Config : in Options.Getopt.Configuration;
       Output : in Ada.Text_IO.File_Type)
@@ -121,7 +190,7 @@ procedure Markdown is
    begin
       Put_Line (Output,
         "Usage: " & Ada.Command_Line.Command_Name
-        & " [-h] [source_file]");
+        & " [-h] [-H | -x] [-d | -m] [source_file]");
       New_Line (Output);
       Put_Line (Output, "Options:");
 
@@ -129,12 +198,18 @@ procedure Markdown is
          Put_Line (Output, Indent & Config.Format_Names (Id));
 
          case Id is
+            when Options.Discount_Input =>
+               Put_Line (Output, Indent & Indent
+                 & "Enable Discount extensions in input");
             when Options.Help =>
                Put_Line (Output, Indent & Indent
                  & "Show this help text");
             when Options.Html_Output =>
                Put_Line (Output, Indent & Indent
                  & "Output HTML-style self-closing tags (e.g. <br>)");
+            when Options.Markdown_Input =>
+               Put_Line (Output, Indent & Indent
+                 & "Parse input as strict official Markdown");
             when Options.Xhtml_Output =>
                Put_Line (Output, Indent & Indent
                  & "Output XHTML-style self-closing tags (e.g. <br />)");
@@ -166,57 +241,9 @@ procedure Markdown is
    procedure Process_Stream
      (Input : in out Ada.Streams.Root_Stream_Type'Class)
    is
-      Parser : Markup.Parsers.Markdown.Extensions.Extended_Parser;
-
       Text : Natools.String_Slices.Slice;
    begin
       Renderer.Set_Format (Opt.Output_Format);
-
-      Parser.Atx_Header (Renderer.Header);
-      Parser.Code_Block (Renderer.Code_Block);
-      Parser.Horizontal_Rule (Renderer.Horizontal_Rule);
-      Parser.Html_Block (Renderer.Raw_Html_Block);
-      Parser.Html_Tag_Block (Renderer.Raw_Html_Block);
-      Parser.Html_Comment_Block (Renderer.Raw_Html_Block);
-      Parser.List (Renderer.Ordered_List, Renderer.List_Item,
-                   Markup.Parsers.Markdown.Styles.Ordered);
-      Parser.List (Renderer.Unordered_List, Renderer.List_Item,
-                   Markup.Parsers.Markdown.Styles.Unordered);
-      Parser.Paragraph (Renderer.Paragraph);
-      Parser.Quote_Block (Renderer.Quote_Block);
-      Parser.Setext_Header (Renderer.Header);
-      Parser.Discount_Definition_List
-        (Renderer.Definition_List,
-         Renderer.Definition_Title,
-         Renderer.Definition_Description);
-      Parser.PME_Definition_List
-        (Renderer.Definition_List,
-         Renderer.Definition_Title,
-         Renderer.Definition_Description);
-      Parser.PME_Table
-        (Renderer.Table,
-         Renderer.Table_Row,
-         Renderer.Table_Header_Cell,
-         Renderer.Table_Data_Cell);
-      Parser.Discount_Centered (Renderer.Paragraph);
-      Parser.Discount_Class_Block (Renderer.Division);
-      Parser.Discount_Fenced_Code_Block (Renderer.Code_Block);
-
-      Parser.Emphasis (Renderer.Emphasis, 1);
-      Parser.Emphasis (Renderer.Strong, 2);
-      Parser.Emphasis (Renderer.Strong_Emphasis, 3);
-      Parser.Entity (Renderer.Raw_Html_Span);
-      Parser.Escape (Renderer.Raw_Text_Span);
-      Parser.Code_Span (Renderer.Code_Span);
-      Parser.Discount_Image (Renderer.Image);
-      Parser.Auto_Link (Renderer.Anchor);
-      Parser.Html_Span (Renderer.Raw_Html_Span);
-
-      Parser.Pseudoprotocol_Link (Renderer.Anchor);
-      Parser.Pseudoprotocol_Abbr (Renderer.Abbreviation);
-      Parser.Pseudoprotocol_Class (Renderer.Span);
-      Parser.Pseudoprotocol_Id (Renderer.Anchor);
-      Parser.Pseudoprotocol_Raw (Renderer.Raw_Html_Span);
 
       Read_Text : declare
          use Ada.Streams;
@@ -238,7 +265,11 @@ procedure Markdown is
            (Ada.Strings.Unbounded.To_String (Input_Text));
       end Read_Text;
 
-      Parser.Process (Text);
+      Process_Text : declare
+         Parser : Markup.Parsers.Markdown.Markdown_Parser'Class := Make_Parser;
+      begin
+         Parser.Process (Text);
+      end Process_Text;
    end Process_Stream;
 
 
