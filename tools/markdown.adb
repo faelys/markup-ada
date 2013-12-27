@@ -40,6 +40,7 @@ procedure Markdown is
         (Discount_Input,
          Help,
          Markdown_Input,
+         Newline_Format,
          Html_Output,
          Xhtml_Output);
 
@@ -47,12 +48,17 @@ procedure Markdown is
 
       function Config return Getopt.Configuration;
 
+      function Value (Image : String)
+        return Instances.Html_Stream.Newline_Format;
+
       type State is new Getopt.Handlers.Callback with record
          Action : Options.Action := Run;
          Arg_Count : Natural := 0;
          Output_Format : Instances.Html_Stream.Output_Format
            := Instances.Html_Stream.Html;
          Input_Format : Options.Input_Format := Official;
+         Newline_Format : Instances.Html_Stream.Newline_Format
+           := Instances.Html_Stream.Autodetect;
       end record;
 
       overriding procedure Option
@@ -80,6 +86,10 @@ procedure Markdown is
          Result.Add_Option ("help",      'h', No_Argument, Help);
          Result.Add_Option ("html",      'H', No_Argument, Html_Output);
          Result.Add_Option ("markdown",  'm', No_Argument, Markdown_Input);
+         Result.Add_Option ("newline",   'n',
+           Required_Argument, Newline_Format);
+         Result.Add_Option ("nl",
+           Required_Argument, Newline_Format);
          Result.Add_Option ("xhtml",     'x', No_Argument, Xhtml_Output);
          return Result;
       end Config;
@@ -88,9 +98,7 @@ procedure Markdown is
       overriding procedure Option
         (Handler  : in out State;
          Id       : in Options.Id;
-         Argument : in String)
-      is
-         pragma Unreferenced (Argument);
+         Argument : in String) is
       begin
          case Id is
             when Discount_Input =>
@@ -101,6 +109,16 @@ procedure Markdown is
                Handler.Output_Format := Instances.Html_Stream.Html;
             when Markdown_Input =>
                Handler.Input_Format := Official;
+            when Newline_Format =>
+               begin
+                  Handler.Newline_Format := Value (Argument);
+               exception
+                  when Constraint_Error =>
+                     Handler.Action := Error;
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Current_Error,
+                        "Unable to parse newline format """ & Argument & '"');
+               end;
             when Xhtml_Output =>
                Handler.Output_Format := Instances.Html_Stream.Xhtml;
          end case;
@@ -116,6 +134,63 @@ procedure Markdown is
             Handler.Arg_Count := Handler.Arg_Count + 1;
          end if;
       end Argument;
+
+
+      function Value (Image : String)
+        return Instances.Html_Stream.Newline_Format
+      is
+         function Is_Autodetect return Boolean;
+
+         function Is_Autodetect return Boolean is
+            Reconstructed : String := "autodetect";
+            Length : constant Natural
+              := Natural'Min (Image'Length, Reconstructed'Length);
+
+            use type Instances.Html_Stream.Newline_Format;
+         begin
+            Reconstructed
+              (Reconstructed'First .. Reconstructed'First + Length - 1)
+              := Image (Image'First .. Image'First + Length - 1);
+            return Instances.Html_Stream.Newline_Format'Value (Reconstructed)
+              = Instances.Html_Stream.Autodetect;
+         exception
+            when Constraint_Error => return False;
+         end Is_Autodetect;
+      begin
+         if Is_Autodetect then
+            return Instances.Html_Stream.Autodetect;
+         end if;
+
+         case Image'Length is
+            when 5 =>
+               declare
+                  Reconstructed : String (1 .. 5) := Image;
+               begin
+                  Reconstructed (3) := '_';
+                  return Instances.Html_Stream.Newline_Format'Value
+                    (Reconstructed);
+               end;
+
+            when 4 =>
+               declare
+                  Reconstructed : String (1 .. 5);
+               begin
+                  Reconstructed (1 .. 2)
+                    := Image (Image'First .. Image'First + 1);
+                  Reconstructed (3) := '_';
+                  Reconstructed (4 .. 5)
+                    := Image (Image'Last - 1 .. Image'Last);
+                  return Instances.Html_Stream.Newline_Format'Value
+                    (Reconstructed);
+               end;
+
+            when 2 =>
+               return Instances.Html_Stream.Newline_Format'Value (Image);
+
+            when others =>
+               raise Constraint_Error;
+         end case;
+      end Value;
    end Options;
 
 
@@ -190,7 +265,7 @@ procedure Markdown is
    begin
       Put_Line (Output,
         "Usage: " & Ada.Command_Line.Command_Name
-        & " [-h] [-H | -x] [-d | -m] [source_file]");
+        & " [-h] [-H | -x] [-d | -m] [-n newline_format] [source_file]");
       New_Line (Output);
       Put_Line (Output, "Options:");
 
@@ -210,6 +285,11 @@ procedure Markdown is
             when Options.Markdown_Input =>
                Put_Line (Output, Indent & Indent
                  & "Parse input as strict official Markdown");
+            when Options.Newline_Format =>
+               Put_Line (Output, Indent & Indent
+                 & "Set newline format.");
+               Put_Line (Output, Indent & Indent
+                 & "Allowed values: Autodetect, CR, LF, CR_LF, LF_CR");
             when Options.Xhtml_Output =>
                Put_Line (Output, Indent & Indent
                  & "Output XHTML-style self-closing tags (e.g. <br />)");
@@ -244,6 +324,7 @@ procedure Markdown is
       Text : Natools.String_Slices.Slice;
    begin
       Renderer.Set_Format (Opt.Output_Format);
+      Renderer.Set_Newline (Opt.Newline_Format);
 
       Read_Text : declare
          use Ada.Streams;
