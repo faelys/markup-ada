@@ -364,7 +364,7 @@ begin
    Config.Process (Opt);
 
    if Opt.Arg_Count = 0 and Opt.Action = Options.Run then
-      Opt.Action := Options.Error;
+      Process_File ("-");
    end if;
 
    case Opt.Action is
@@ -377,4 +377,3 @@ begin
          null;
    end case;
 end Markdown;
-
