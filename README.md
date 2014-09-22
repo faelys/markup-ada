@@ -54,3 +54,19 @@ A Markdown list is rendered as a single list element containing a sequence
 of item elements. This is also an example of a parser procedure that
 require an extra parameter, so that the parser knows that renderer elements
 are to be used only for ordered lists.
+
+# Limitations #
+
+Currently the library can only deal with standard `String` and containers
+derived from it. This means in particular that the maximum text size is
+determined by platform-dependent `Standard.Integer`, and that input is
+processed as a sequence of ISO-8859-1 characters.
+
+Since usual lightweight markup languages only involve ASCII constructions,
+and usual output formats copy directly the text from input, encoding isn't
+much of a problem. For example, even if the Markdown-to-HTML translator
+sees `Ã©` instead of `é`, the same bytes are valid UTF-8 in the output.
+
+However renderer for more complex format, or subtler processing (e.g.
+involving text width or fixed-width-font vertical alignment, that might
+pose serious problems in the future.
