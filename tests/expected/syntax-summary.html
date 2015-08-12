@@ -1,0 +1,251 @@
+<h1>Block-level elements</h1>
+<p>Block-level elements are generally separated by one or more blank lines.
+Unmarked blocks are treated as paragraphs.</p>
+<blockquote>
+  <p>Block quotes are marked by greater-than signs (<code>&gt;</code>)
+like e-mail quotes.</p>
+</blockquote>
+<p>Lists are a sequence of items preceeded by a marker. For bulleted lists,
+allowed markers are:</p>
+<ul>
+  <li>dash (<code>-</code>),</li>
+  <li>plus (<code>+</code>),</li>
+  <li>star (<code>*</code>).</li>
+</ul>
+<p>For numbered lists, any numbers followed by a dot (<code>.</code>) and a space:</p>
+<ol>
+  <li>first item,</li>
+  <li>second item,</li>
+  <li>third item.</li>
+</ol>
+<p>Also both kind of lists can contain span-level items, like lists above,
+or block-level items, like this :</p>
+<ul>
+  <li>
+    <p>First block.</p>
+  </li>
+  <li>
+    <p>Second block.</p>
+  </li>
+  <li>
+    <p>Last block.</p>
+  </li>
+</ul>
+<ol>
+  <li>
+    <p>The same things for numbered lists.</p>
+  </li>
+  <li>
+    <p>The same things for numbered lists.</p>
+  </li>
+</ol>
+<p>Lists can also be nested:</p>
+<ul>
+  <li>Item 1
+    <ul>
+      <li>Item 1.1</li>
+      <li>Item 1.2</li>
+    </ul>
+  </li>
+  <li>Item 2
+    <ol>
+      <li>Item 2.1</li>
+      <li>Item 2.2</li>
+    </ol>
+  </li>
+</ul>
+<p>Code blocks are unmarked indented blocks, however some blocks consider
+indentation as succession (e.g. list items).</p>
+<pre><code>So this
+is a
+code block.</code></pre>
+<div>
+  <p>Raw HTML blocks are also available. No markdown interpretation is
+performed here.</p>
+</div>
+
+<!-- HTML comments are also considered as blocks. -->
+<p>Horizontal rules is a line containing at least three dashes (<code>-</code>),
+stars (<code>*</code>) or underscores (<code>_</code>) without any other non-blank character.</p>
+<hr>
+<p>They can also be entered as a single raw HTML tag:</p>
+<hr>
+
+<hr
+class="special-horiz-rule"
+/>
+
+<p>Since horizontal rules also use list markers, as a special rule a valid
+horizontal rule syntax is not considered as a list item:</p>
+<ul>
+  <li>
+    <p>first block</p>
+  </li>
+  <li>
+    <p>second (and last) block</p>
+  </li>
+</ul>
+<hr>
+<h2>Atx-style level-two header</h2>
+<p>Starting with hash sybmols (<code>#</code>).</p>
+<h2>Setext-style level-two header</h2>
+<p>Underlined with dashes (<code>-</code>) or equal signs (<code>=</code>) for first level.</p>
+<h1>Span-level elements</h1>
+<p>Code spans are marked by any symmetric number of consecutive backticks
+(<code>`</code>) and space-trimmed. This allows nesting backticks inside code spans
+without escaping (e.g. <code>`` ` ``</code>).</p>
+<p>Simple <em>emphasis</em> is marked by stars (<code>*</code>) or underscores (<code>_</code>), with the
+caveat an opening marker cannot be followed by a blank and a closing marker
+cannot follow a blank. Note thereforce that stars and underscores inside
+words are considered as valid marker for any end (however words containing
+underscores usually belong to code spans anyway).</p>
+<p><strong>Double</strong> <strong>emphasis</strong> and <strong><em>triple</em></strong> <strong><em>emphasis</em></strong> work similarly.
+Note that in official Markdown specification, triple emphasis is merely simple
+and double emphasis nested together, they are considered a separate entity
+here to remove the ambiguity of nesting order.</p>
+<p>HTML &#x65;ntities are part of Markdown specification, so they have a
+dedicated parser element so they can be handled correctly by non-HTML
+renderers.</p>
+<p>Similarly, inline <abbr title="HyperText Markup Language">HTML</abbr> tags
+are recognized and given as-is to the renderer. Note also that no correctness
+or balancing test is perfomed.</p>
+<p>Backslashes (<code>\</code>) quote the following character, so that litteral ` backticks
+or * stars can be inserted in a text.</p>
+<h1>Hypertext links</h1>
+<p>Technically, inline images are a special kind of hypertext link, that follow
+the same syntax after an exclamation mark (<code>!</code>).</p>
+<p>The text of a link and the alt-text of an image are marked by brackets
+(<code>[</code> … <code>]</code>), and the linked URL or image URL follow in any of the ways
+described blow.</p>
+<p>Inline links provide the URL directly between parentheses (<code>(</code> … <code>)</code>):
+<a href="http://example.com/">text link</a></p>
+<p>Reference links use a reference between brackets (<code>[</code> … <code>]</code>) and a separate
+element specifies the URL for each reference.
+<a href="http://example.com/">text link</a></p>
+<p>Note that references are case insensistive (though currenly only ASCII
+case-folding is implemented), so <a href="http://example.com/">this also links to ref1</a>. Similarly
+white sequences are folded too, so <a href="http://example.com/">this links to <code>text link</code></a>.</p>
+<p>Short-cut links are like an empty reference, and use the link/alt text as a
+reference:  <a href="http://example.com/">text link</a></p>
+<p>Also any time a URL is provided, it can also be followed by an optional
+title, between simple quotes (<code>'</code>) or double quotes (<code>"</code>):
+<a href="http://example.com/" title="title text">text link</a>.</p>
+<p><img src="http://example.com/image.png" title="title text" alt="alt text"></p>
+<p>Moreover, an URL can be enclosed in angle brackets (<code>&lt;</code> … <code>&gt;</code>) like
+<a href="http://example.com/">in this reference</a> or <a href="http://example.com/">inline</a>.</p>
+<p>The title in a reference entry can be on the next line with an indentation,
+<a href="http://example.com/" title="title text">like in this reference</a>.</p>
+<p>Autolinks are a URL inserted directly into the text, surrounded by
+angle bracks (<code>&lt;</code> … <code>&gt;</code>), like <a href="http://example.com">http://example.com</a>.</p>
+<h1>Extensions</h1>
+<h2>Inspired from PHP-Markdown-Extra</h2>
+<p>The following few extensions from <a href="http://michelf.ca/projects/php-markdown/extra/">PHP-Markdown-Extra</a> are available,
+mainly to allow complete Discount support (see below):</p>
+<ul>
+  <li>
+    <p>Definition lists, with single-line unindented terms and
+colon-prefixed (<code>:</code>) definitions:</p>
+    <dl>
+      <dt>term1</dt>
+      <dd>
+        <p>First definition.</p>
+        <p>Second pragraph of first definition.</p>
+      </dd>
+      <dt>term2</dt>
+      <dt>alternate term2</dt>
+      <dd>Second definition.</dd>
+    </dl>
+  </li>
+  <li>
+    <p>Tables, using pipe signs (<code>|</code>) as column separators, and a line
+containing only pipe signs, dashes (<code>-</code>) and blanks as header, either as
+first line (for headerless tables) or as second line. Leading and trailing
+pipe signs are optional, but to be considered as a table each line of the
+block must have at least one pipe sign.</p>
+    <p>To include a litteral pipe sign inside a cell, preceed it with a
+backslash (<code>\</code>), even when there should be no need for an escape (e.g.
+because it is inside a code span).</p>
+    <p>Optionnally the pipe sign can be immediately preceeded or followed by
+a colon (<code>:</code>) to indicate alignment of adjacent cells. A colon on the
+left side means left-aligned, on the right side for right-aligned and on
+both sides for centered. Specifying an alignment in the dash-only line sets
+alignment for the whole column.</p>
+  </li>
+</ul>
+<table>
+  <col>
+  <col>
+  <col style="text-align: center">
+  <tr>
+    <th>First Header</th>
+    <th>Second Header</th>
+    <th>Centered column</th>
+  </tr>
+  <tr>
+    <td>Content Cell</td>
+    <td>Content Cell</td>
+    <td>Cell with a pipe (<code>\|</code>)</td>
+  </tr>
+  <tr>
+    <td>Content Cell</td>
+    <td>Content Cell</td>
+    <td style="text-align: right">Right-aligned override</td>
+  </tr>
+</table>
+<h2>Inspired from Discount</h2>
+<p>Almost all extensions supported by <a href="http://www.pell.portland.or.us/~orc/Code/discount/">Discount</a> are supported:</p>
+<ul>
+  <li>
+    <p style="text-align: center">Centered paragraph, between arrows (<code>-&gt;</code> … <code>&lt;-</code>).</p>
+  </li>
+  <li>
+    <p>Images with size specification, by adding at the end of the title text both
+numbers, separated by a lower-case X character (<code>x</code>) and following an equal
+sign (<code>=</code>), without any blank.</p>
+    <p><img src="http://example.com/image.png" title="title text" width="150" height="100" alt="alt text of image with explicit size"></p>
+  </li>
+  <li>
+    <p>Definition lists, with terms on a single line, between equal signs (<code>=</code>)
+and definitions as indented lines:</p>
+    <dl>
+      <dt>term1</dt>
+      <dd>
+        <p>First definition.</p>
+        <p>Second paragraph of first definition.</p>
+      </dd>
+      <dt>term2</dt>
+      <dt>alternate term2</dt>
+      <dd>Second definition</dd>
+    </dl>
+  </li>
+  <li>
+    <p>Pseudoprotocol links: when a special string is used as scheme in the
+link URL, the element is rendered differently:</p>
+    <ul>
+      <li><code>abbr:</code><em>description</em> for abbreviations
+like <abbr title="Cascading Style Sheets">CSS</abbr>,</li>
+      <li><code>class:</code><em>name</em> for <span class="css-style">span tags</span> with the given class(es),</li>
+      <li><code>id:</code><em>name</em> for an <a id="id-pseudoprotocol">anchor</a> with the given id,</li>
+      <li><code>raw:</code><em>text</em> for unprocessed text insertion.</li>
+    </ul>
+  </li>
+  <li>
+    <div class="css-style">
+      <p>Class blocks, that look like quote blocks whose first line
+is a list of CSS classes between percent signs (<code>%</code>).</p>
+    </div>
+  </li>
+  <li>
+    <p>Fenced code block, with nothing but at least 4 occurrences of a single
+fence character (backtick (<code>`</code>) or tilde (<code>~</code>)) on the first line and
+the last line of the code block.</p>
+    <p>At least as many fence characters must be used for closing as for
+opening the code block, to allow escaping lines containing only the fencing
+charater</p>
+    <pre><code>
+This is a code block opened by 6 tildes.
+~~~~~
+The line above is inside the code block, but not the line below.
+</code></pre>
+  </li>
+</ul>

@@ -1,0 +1,24 @@
+<h1>Indentation</h1>
+<p>No indentation yields a normal paragraph.</p>
+<p> One space indentation also yields a normal paragraph.</p>
+<p>  Two-space indentation is still a normal paragraph.</p>
+<p>   Three-space indentation is on the edge but still a normal paragraph.</p>
+<pre><code>Four-space indentation switches to code block.
+
+One-tab indentation is also a code block.</code></pre>
+<h1>Fuzzy ATX headers</h1>
+<p>These are not ATX headers but match some of the parsing steps:</p>
+<p>###</p>
+<p>###   </p>
+<p>###  ###</p>
+<p>########</p>
+<h1>Fuzzy HTML comments</h1>
+<p>None of those are valid HTML tags or comments:</p>
+<p>&lt;</p>
+<p>&lt;!</p>
+<p>&lt;!-</p>
+<p>Following is an invalid HTML comment that is still accepted as such by
+the parser.</p>
+<!-- -- -->
+<h1>Footer</h1>
+<p>Footer to prevent wierd stuff with temporarily-last lines.</p>
