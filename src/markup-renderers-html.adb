@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- Copyright (c) 2013, Natacha Porté                                        --
+-- Copyright (c) 2013-2015, Natacha Porté                                   --
 --                                                                          --
 -- Permission to use, copy, modify, and distribute this software for any    --
 -- purpose with or without fee is hereby granted, provided that the above   --
@@ -322,71 +322,73 @@ package body Markup.Renderers.Html is
    -----------------
 
    overriding procedure Open (Element : in out Html_Element) is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       if Element.Opened then
          raise Program_Error with "Opening an already-opened token";
       end if;
 
       if Element.Newline_Before_Open
-        and then not Element.Renderer.Query.Data.Beginning_Of_Line
+        and then not Renderer.Beginning_Of_Line
       then
-         Element.Renderer.Update.Data.Append_Newline;
+         Renderer.Append_Newline;
       else
-         Element.Renderer.Update.Data.Append_Pending_Newline;
+         Renderer.Append_Pending_Newline;
       end if;
 
-      Element.Renderer.Update.Data.Append_Indent;
+      Renderer.Append_Indent;
 
       Append
-        (Element.Renderer.Update.Data.Output,
+        (Renderer.Output,
          "<" & Element.Tag (1 .. Positive (Element.Tag_Size)));
 
       Append_Attributes (Html_Element'Class (Element));
 
       if not Element.Self_Closing then
-         Append (Element.Renderer.Update.Data.Output, ">");
+         Append (Renderer.Output, ">");
       end if;
 
       if Element.Newline_After_Open then
-         Element.Renderer.Update.Data.Append_Newline;
+         Renderer.Append_Newline;
       end if;
 
-      Element.Renderer.Update.Data.Update_Indent (+1);
+      Renderer.Update_Indent (+1);
       Element.Opened := True;
    end Open;
 
 
    overriding procedure Close (Element : in out Html_Element) is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       if not Element.Opened then
          raise Program_Error with "Closing a non-opened token";
       end if;
 
-      Element.Renderer.Update.Data.Update_Indent (-1);
+      Renderer.Update_Indent (-1);
 
       if Element.Newline_Before_Close
-        and then not Element.Renderer.Query.Data.Beginning_Of_Line
+        and then not Renderer.Beginning_Of_Line
       then
-         Element.Renderer.Update.Data.Append_Newline;
+         Renderer.Append_Newline;
       end if;
 
-      Element.Renderer.Update.Data.Append_Indent;
+      Renderer.Append_Indent;
 
       if Element.Self_Closing then
-         case Element.Renderer.Query.Data.Format is
+         case Renderer.Format is
             when Html =>
-               Append (Element.Renderer.Update.Data.Output, ">");
+               Append (Renderer.Output, ">");
             when Xhtml =>
-               Append (Element.Renderer.Update.Data.Output, " />");
+               Append (Renderer.Output, " />");
          end case;
       else
          Append
-           (Element.Renderer.Update.Data.Output,
+           (Renderer.Output,
             "</" & Element.Tag (1 .. Positive (Element.Tag_Size)) & ">");
       end if;
 
       if Element.Newline_After_Close then
-         Element.Renderer.Update.Data.Append_Newline;
+         Renderer.Append_Newline;
       end if;
 
       Element.Opened := False;
@@ -408,14 +410,15 @@ package body Markup.Renderers.Html is
 
 
    procedure Append_Attributes (Element : in out Html_Element) is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
-      Element.Renderer.Update.Data.Append_Attribute
+      Renderer.Append_Attribute
         ("id", Slices.To_String (Element.Id));
 
-      Element.Renderer.Update.Data.Append_Attribute
+      Renderer.Append_Attribute
         ("class", Ada.Strings.Unbounded.To_String (Element.Classes));
 
-      Element.Renderer.Update.Data.Append_Attribute
+      Renderer.Append_Attribute
         ("style", Get_Style (Html_Element'Class (Element)));
    end Append_Attributes;
 
@@ -544,16 +547,17 @@ package body Markup.Renderers.Html is
 
 
    overriding procedure Append_Attributes (Element : in out Html_Anchor) is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       Append_Attributes (Html_Element (Element));
 
       if not Element.Link.Is_Null then
-         Element.Renderer.Update.Data.Append_Attribute
+         Renderer.Append_Attribute
            ("href", Slices.To_String (Element.Link), Allow_Empty => True);
       end if;
 
       if not Element.Title.Is_Null then
-         Element.Renderer.Update.Data.Append_Attribute
+         Renderer.Append_Attribute
            ("title", Slices.To_String (Element.Title), Allow_Empty => True);
       end if;
    end Append_Attributes;
@@ -627,16 +631,17 @@ package body Markup.Renderers.Html is
 
 
    overriding procedure Append_Attributes (Element : in out Html_Image) is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       Append_Attributes (Html_Anchor (Element));
 
       if Element.Width > 0 then
-         Element.Renderer.Update.Data.Append_Attribute
+         Renderer.Append_Attribute
            ("width", Positive'Image (Element.Width));
       end if;
 
       if Element.Height > 0 then
-         Element.Renderer.Update.Data.Append_Attribute
+         Renderer.Append_Attribute
            ("height", Positive'Image (Element.Height));
       end if;
    end Append_Attributes;
@@ -649,34 +654,36 @@ package body Markup.Renderers.Html is
 
    overriding procedure Open (Element : in out Html_Double_Element) is
       Newline_After : constant Boolean := Element.Newline_After_Open;
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       Element.Newline_After_Open := False;
       Open (Html_Element (Element));
       Element.Newline_After_Open := Newline_After;
 
       Append
-        (Element.Renderer.Update.Data.Output,
+        (Renderer.Output,
          "<" & Element.Second_Tag (1 .. Positive (Element.Second_Size)) & ">");
 
       if Element.Newline_After_Open then
-         Element.Renderer.Update.Data.Append_Newline;
+         Renderer.Append_Newline;
       end if;
    end Open;
 
 
    overriding procedure Close (Element : in out Html_Double_Element) is
       Newline_Before : constant Boolean := Element.Newline_Before_Close;
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       if Element.Newline_Before_Close
-        and then not Element.Renderer.Query.Data.Beginning_Of_Line
+        and then not Renderer.Beginning_Of_Line
       then
-         Element.Renderer.Update.Data.Append_Newline;
+         Renderer.Append_Newline;
       end if;
 
-      Element.Renderer.Update.Data.Append_Indent;
+      Renderer.Append_Indent;
 
       Append
-        (Element.Renderer.Update.Data.Output,
+        (Renderer.Output,
          "</"
          & Element.Second_Tag (1 .. Positive (Element.Second_Size))
          & ">");
@@ -702,13 +709,15 @@ package body Markup.Renderers.Html is
 
    overriding procedure Append
      (Element : in out Raw_Data;
-      Text : in String) is
+      Text : in String)
+   is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       if Element.Escape then
-         Element.Renderer.Update.Data.Append_Text (Text);
+         Renderer.Append_Text (Text);
       else
-         Append (Element.Renderer.Update.Data.Output, Text);
-         Element.Renderer.Update.Data.Beginning_Of_Line := False;
+         Append (Renderer.Output, Text);
+         Renderer.Beginning_Of_Line := False;
       end if;
    end Append;
 
@@ -719,6 +728,7 @@ package body Markup.Renderers.Html is
    -----------------
 
    overriding procedure Open (Element : in out Html_Table) is
+      Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       Open (Html_Element (Element));
 
@@ -731,19 +741,19 @@ package body Markup.Renderers.Html is
            := Element.Alignments.Query;
       begin
          for I in Align.Data'Range loop
-            Element.Renderer.Update.Data.Append_Pending_Newline;
-            Element.Renderer.Update.Data.Append_Indent;
-            Append (Element.Renderer.Update.Data.Output, "<col");
-            Element.Renderer.Update.Data.Append_Attribute
+            Renderer.Append_Pending_Newline;
+            Renderer.Append_Indent;
+            Append (Renderer.Output, "<col");
+            Renderer.Append_Attribute
               ("style", Image (Align.Data (I)));
 
-            case Element.Renderer.Query.Data.Format is
+            case Renderer.Format is
                when Html =>
-                  Append (Element.Renderer.Update.Data.Output, ">");
+                  Append (Renderer.Output, ">");
                when Xhtml =>
-                  Append (Element.Renderer.Update.Data.Output, " />");
+                  Append (Renderer.Output, " />");
             end case;
-            Element.Renderer.Update.Data.Newline_Pending := True;
+            Renderer.Newline_Pending := True;
          end loop;
       end;
    end Open;
