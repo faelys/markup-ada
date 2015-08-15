@@ -633,7 +633,17 @@ package body Markup.Renderers.Html is
    overriding procedure Append_Attributes (Element : in out Html_Image) is
       Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
-      Append_Attributes (Html_Anchor (Element));
+      Append_Attributes (Html_Element (Element));
+
+      if not Element.Link.Is_Null then
+         Renderer.Append_Attribute
+           ("src", Slices.To_String (Element.Link), Allow_Empty => True);
+      end if;
+
+      if not Element.Title.Is_Null then
+         Renderer.Append_Attribute
+           ("title", Slices.To_String (Element.Title), Allow_Empty => True);
+      end if;
 
       if Element.Width > 0 then
          Renderer.Append_Attribute
