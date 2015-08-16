@@ -341,6 +341,7 @@ package body Markup.Renderers.Html is
       Append
         (Renderer.Output,
          "<" & Element.Tag (1 .. Positive (Element.Tag_Size)));
+      Renderer.Beginning_Of_Line := False;
 
       Append_Attributes (Html_Element'Class (Element));
 
@@ -386,6 +387,8 @@ package body Markup.Renderers.Html is
            (Renderer.Output,
             "</" & Element.Tag (1 .. Positive (Element.Tag_Size)) & ">");
       end if;
+
+      Renderer.Beginning_Of_Line := False;
 
       if Element.Newline_After_Close then
          Renderer.Append_Newline;
