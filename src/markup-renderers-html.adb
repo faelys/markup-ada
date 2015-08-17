@@ -634,6 +634,15 @@ package body Markup.Renderers.Html is
 
 
    overriding procedure Append_Attributes (Element : in out Html_Image) is
+      function Image (N : Natural) return String;
+
+      function Image (N : Natural) return String is
+         Result : constant String := Natural'Image (N);
+      begin
+         pragma Assert (Result (Result'First) = ' ');
+         return Result (Result'First + 1 .. Result'Last);
+      end Image;
+
       Renderer : constant Renderer_Refs.Mutator := Element.Renderer.Update;
    begin
       Append_Attributes (Html_Element (Element));
@@ -649,13 +658,11 @@ package body Markup.Renderers.Html is
       end if;
 
       if Element.Width > 0 then
-         Renderer.Append_Attribute
-           ("width", Positive'Image (Element.Width));
+         Renderer.Append_Attribute ("width", Image (Element.Width));
       end if;
 
       if Element.Height > 0 then
-         Renderer.Append_Attribute
-           ("height", Positive'Image (Element.Height));
+         Renderer.Append_Attribute ("height", Image (Element.Height));
       end if;
    end Append_Attributes;
 
