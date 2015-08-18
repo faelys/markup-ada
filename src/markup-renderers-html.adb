@@ -268,12 +268,17 @@ package body Markup.Renderers.Html is
          end if;
          Position := N;
       end loop;
+
+      State.In_Text := True;
    end Append_Text;
 
 
    procedure Append_Indent (State : in out Renderer_Data) is
    begin
-      if State.Beginning_Of_Line and State.Indent_Level > 0 then
+      if State.Beginning_Of_Line
+        and not State.In_Text
+        and State.Indent_Level > 0
+      then
          Append (State.Output, Fixed."*" (State.Indent_Level, "  "));
          State.Beginning_Of_Line := False;
       end if;
@@ -332,6 +337,7 @@ package body Markup.Renderers.Html is
         and then not Renderer.Beginning_Of_Line
       then
          Renderer.Append_Newline;
+         Renderer.In_Text := False;
       else
          Renderer.Append_Pending_Newline;
       end if;
@@ -355,6 +361,7 @@ package body Markup.Renderers.Html is
 
       Renderer.Update_Indent (+1);
       Element.Opened := True;
+      Renderer.In_Text := False;
    end Open;
 
 
@@ -371,6 +378,7 @@ package body Markup.Renderers.Html is
         and then not Renderer.Beginning_Of_Line
       then
          Renderer.Append_Newline;
+         Renderer.In_Text := False;
       end if;
 
       Renderer.Append_Indent;
@@ -395,6 +403,7 @@ package body Markup.Renderers.Html is
       end if;
 
       Element.Opened := False;
+      Renderer.In_Text := False;
    end Close;
 
 

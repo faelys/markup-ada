@@ -138,6 +138,7 @@ private
       Autodetected : Newline_Format := Autodetect;
       Newline_Pending : Boolean := False;
       Beginning_Of_Line : Boolean := True;
+      In_Text : Boolean := False;
       Indent_Level : Natural := 0;
    end record;
 
