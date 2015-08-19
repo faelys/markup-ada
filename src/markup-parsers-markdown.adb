@@ -876,7 +876,7 @@ package body Markup.Parsers.Markdown is
             return;
          end if;
 
-         N := Text.Index (Tools.Blanks, Position, Ada.Strings.Outside);
+         N := Text.Index (Tools.Spaces, Position, Ada.Strings.Outside);
          if N = 0 then
             return;
          else
