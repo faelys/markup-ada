@@ -1,3 +1,9 @@
+# Newline autodetection failure
+
+At this point the renderer hasn't encountered any newline, because of internals
+of ATX header parsing. So in autodetection mode, no newline is actually output
+between closing `h1` and opening `p`.
+
 # Indentation
 
 No indentation yields a normal paragraph.
