@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- Copyright (c) 2013, Natacha Porté                                        --
+-- Copyright (c) 2013-2015, Natacha Porté                                   --
 --                                                                          --
 -- Permission to use, copy, modify, and distribute this software for any    --
 -- purpose with or without fee is hereby granted, provided that the above   --
@@ -1476,17 +1476,17 @@ package body Markup.Parsers.Markdown is
                   --  Trim indentation and check sublist start
 
                function Trim (S : in String) return Slices.String_Range is
-                  L : constant Natural := Indent_Length (S);
+                  First : constant Natural
+                    := Line_Beginning (S) + Indent_Length (S);
                begin
                   if Sub_List = 0 and then
-                    (Ordered_Marker_Length (S (S'First + L .. S'Last)) > 0
-                     or else Unordered_Marker_Length
-                               (S (S'First + L .. S'Last)) > 0)
+                    (Ordered_Marker_Length (S (First .. S'Last)) > 0
+                     or else Unordered_Marker_Length (S (First .. S'Last)) > 0)
                   then
                      Sub_List := S'First;
                   end if;
 
-                  return (S'First + L, S'Length - L);
+                  return (First, S'Last - First + 1);
                end Trim;
             begin
                Contents.Trim_Slices (Trim'Access);
