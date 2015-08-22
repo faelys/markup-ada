@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- Copyright (c) 2013, Natacha Porté                                        --
+-- Copyright (c) 2013-2015, Natacha Porté                                   --
 --                                                                          --
 -- Permission to use, copy, modify, and distribute this software for any    --
 -- purpose with or without fee is hereby granted, provided that the above   --
@@ -1025,6 +1025,7 @@ package body Markup.Parsers.Markdown.Extensions is
          First_Line : Boolean := False;
          List_Last : Natural := 0;
          Blank_Last : Natural := 0;
+         Candidate_Blank : Natural := 0;
          Candidate_Last : Natural := 0;
 
          function Description_Prefix (S : String) return Natural is
@@ -1044,10 +1045,11 @@ package body Markup.Parsers.Markdown.Extensions is
          function Scan_Block (S : String) return Boolean is
          begin
             if Tools.Is_Blank (S) then
-               if Candidate_Last > List_Last then
-                  return True;
+               if List_Last > Candidate_Last then
+                  Blank_Last := S'Last;
+               else
+                  Candidate_Blank := S'Last;
                end if;
-               Blank_Last := S'Last;
 
             elsif Description_Prefix (S) > 0 then
                if First_Line then
@@ -1055,11 +1057,15 @@ package body Markup.Parsers.Markdown.Extensions is
                end if;
                List_Last := S'Last;
 
+            elsif Candidate_Blank > Blank_Last then
+               --  Reject a candidate block followed by a non-description block
+               return True;
+
             elsif List_Last > Blank_Last then
                --  Continue an existing approved block
                List_Last := S'Last;
 
-            elsif Blank_Last > Candidate_Last
+            elsif Blank_Last > List_Last
               and then Indent_Length (S) > 0
             then
                --  Approve first line of a new block when indented
