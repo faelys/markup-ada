@@ -872,7 +872,7 @@ package body Markup.Parsers.Markdown.Extensions is
                Contents : Natools.String_Slices.Slice_Sets.Slice_Set
                  := Text.Subset (Item_First, Item_Last);
             begin
-               Remove_Indent (Contents);
+               Remove_Indent (Contents, True);
                Element.Open;
                if Is_Block_Description then
                   Process_Blocks
@@ -1100,7 +1100,7 @@ package body Markup.Parsers.Markdown.Extensions is
                Contents : Natools.String_Slices.Slice_Sets.Slice_Set
                  := Text.Subset (Description_First, Description_Last);
             begin
-               Remove_Indent (Contents);
+               Remove_Indent (Contents, True);
                Element.Open;
                if Has_Blank then
                   Process_Blocks

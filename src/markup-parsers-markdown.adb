@@ -163,16 +163,30 @@ package body Markup.Parsers.Markdown is
    end Indent_Length;
 
 
-   procedure Remove_Indent (Text : in out Sets.Slice_Set) is
+   procedure Remove_Indent
+     (Text : in out Sets.Slice_Set;
+      Partial_Indent_Too : in Boolean := False)
+   is
       function Trim (S : in String) return Slices.String_Range;
+      function Partial_Trim (S : in String) return Slices.String_Range;
 
       function Trim (S : in String) return Slices.String_Range is
          L : constant Natural := Indent_Length (S);
       begin
          return (S'First + L, S'Length - L);
       end Trim;
+
+      function Partial_Trim (S : in String) return Slices.String_Range is
+         F : constant Natural := Line_Beginning (S) + Indent_Length (S);
+      begin
+         return (F, S'Last - F + 1);
+      end Partial_Trim;
    begin
-      Text.Trim_Slices (Trim'Access);
+      if Partial_Indent_Too then
+         Text.Trim_Slices (Partial_Trim'Access);
+      else
+         Text.Trim_Slices (Trim'Access);
+      end if;
    end Remove_Indent;
 
 

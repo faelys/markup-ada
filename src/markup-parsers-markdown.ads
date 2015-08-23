@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- Copyright (c) 2013, Natacha Porté                                        --
+-- Copyright (c) 2013-2015, Natacha Porté                                   --
 --                                                                          --
 -- Permission to use, copy, modify, and distribute this software for any    --
 -- purpose with or without fee is hereby granted, provided that the above   --
@@ -362,7 +362,9 @@ private
    --  Remove '\' characters from the given text
 
    procedure Remove_Indent
-     (Text : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+     (Text : in out Natools.String_Slices.Slice_Sets.Slice_Set;
+      Partial_Indent_Too : in Boolean := False);
    --  Remove a level of indentation (a tab or four spaces) from the text.
+   --  If Partial_Indent_Too then up to three leading spaces are removed too.
 
 end Markup.Parsers.Markdown;
