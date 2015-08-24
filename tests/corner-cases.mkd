@@ -30,6 +30,21 @@ These are not ATX headers but match some of the parsing steps:
 
 ########
 
+# Definition List with a Single Block Description
+
+term
+
+:   Single-block description
+
+break
+
+term1
+:   Standard description
+
+term2
+
+:   Single-block second description
+
 # Fuzzy HTML comments
 
 None of those are valid HTML tags or comments:
