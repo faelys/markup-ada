@@ -107,9 +107,13 @@ package Markup.Renderers.Html is
 
    function Code_Span (Renderer : Renderer_Ref) return Element_Callback'Class;
 
+   function Deleted (Renderer : Renderer_Ref) return Element_Callback'Class;
+
    function Emphasis (Renderer : Renderer_Ref) return Element_Callback'Class;
 
    function Image (Renderer : Renderer_Ref) return Element_Callback'Class;
+
+   function Inserted (Renderer : Renderer_Ref) return Element_Callback'Class;
 
    function Line_Break (Renderer : Renderer_Ref) return Element_Callback'Class;
 

@@ -1009,6 +1009,12 @@ package body Markup.Renderers.Html is
    end Code_Span;
 
 
+   function Deleted (Renderer : Renderer_Ref) return Element_Callback'Class is
+   begin
+      return Create (Renderer, "del");
+   end Deleted;
+
+
    function Emphasis (Renderer : Renderer_Ref) return Element_Callback'Class is
    begin
       return Create (Renderer, "em");
@@ -1021,6 +1027,12 @@ package body Markup.Renderers.Html is
         Link | Title => <>,
         Width | Height => 0);
    end Image;
+
+
+   function Inserted (Renderer : Renderer_Ref) return Element_Callback'Class is
+   begin
+      return Create (Renderer, "ins");
+   end Inserted;
 
 
    function Line_Break (Renderer : Renderer_Ref)
