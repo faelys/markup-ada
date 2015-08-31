@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- Copyright (c) 2013, Natacha Porté                                        --
+-- Copyright (c) 2013-2015, Natacha Porté                                   --
 --                                                                          --
 -- Permission to use, copy, modify, and distribute this software for any    --
 -- purpose with or without fee is hereby granted, provided that the above   --
@@ -35,13 +35,14 @@ procedure Markdown is
 
    package Options is
       type Action is (Error, Print_Help, Run);
-      type Input_Format is (Official, Discount);
+      type Input_Format is (Official, Discount, Special_Extended);
       type Id is
         (Discount_Input,
          Help,
          Markdown_Input,
          Newline_Format,
          Html_Output,
+         Special_Extended_Input,
          Xhtml_Output);
 
       package Getopt is new Natools.Getopt_Long (Id);
@@ -90,6 +91,8 @@ procedure Markdown is
            Required_Argument, Newline_Format);
          Result.Add_Option ("nl",
            Required_Argument, Newline_Format);
+         Result.Add_Option ("special",   's', No_Argument,
+           Special_Extended_Input);
          Result.Add_Option ("xhtml",     'x', No_Argument, Xhtml_Output);
          return Result;
       end Config;
@@ -119,6 +122,8 @@ procedure Markdown is
                        (Ada.Text_IO.Current_Error,
                         "Unable to parse newline format """ & Argument & '"');
                end;
+            when Special_Extended_Input =>
+               Handler.Input_Format := Special_Extended;
             when Xhtml_Output =>
                Handler.Output_Format := Instances.Html_Stream.Xhtml;
          end case;
@@ -199,6 +204,7 @@ procedure Markdown is
 
 
    function Make_Parser return Markup.Parsers.Markdown.Markdown_Parser'Class is
+      use type Options.Input_Format;
    begin
       return Parser : Markup.Parsers.Markdown.Extensions.Extended_Parser do
          Parser.Atx_Header (Renderer.Header);
@@ -225,33 +231,40 @@ procedure Markdown is
          Parser.Auto_Link (Renderer.Anchor);
          Parser.Html_Span (Renderer.Raw_Html_Span);
 
-         case Opt.Input_Format is
-            when Options.Official =>
-               null;
-            when Options.Discount =>
-               Parser.Discount_Definition_List
-                 (Renderer.Definition_List,
-                  Renderer.Definition_Title,
-                  Renderer.Definition_Description);
-               Parser.PME_Definition_List
-                 (Renderer.Definition_List,
-                  Renderer.Definition_Title,
-                  Renderer.Definition_Description);
-               Parser.PME_Table
-                 (Renderer.Table,
-                  Renderer.Table_Row,
-                  Renderer.Table_Header_Cell,
-                  Renderer.Table_Data_Cell);
-               Parser.Discount_Centered (Renderer.Paragraph);
-               Parser.Discount_Class_Block (Renderer.Division);
-               Parser.Discount_Fenced_Code_Block (Renderer.Code_Block);
+         if Opt.Input_Format < Options.Discount then
+            return;
+         end if;
 
-               Parser.Pseudoprotocol_Link (Renderer.Anchor);
-               Parser.Pseudoprotocol_Abbr (Renderer.Abbreviation);
-               Parser.Pseudoprotocol_Class (Renderer.Span);
-               Parser.Pseudoprotocol_Id (Renderer.Anchor);
-               Parser.Pseudoprotocol_Raw (Renderer.Raw_Html_Span);
-         end case;
+         Parser.Discount_Definition_List
+           (Renderer.Definition_List,
+            Renderer.Definition_Title,
+            Renderer.Definition_Description);
+         Parser.PME_Definition_List
+           (Renderer.Definition_List,
+            Renderer.Definition_Title,
+            Renderer.Definition_Description);
+         Parser.PME_Table
+           (Renderer.Table,
+            Renderer.Table_Row,
+            Renderer.Table_Header_Cell,
+            Renderer.Table_Data_Cell);
+         Parser.Discount_Centered (Renderer.Paragraph);
+         Parser.Discount_Class_Block (Renderer.Division);
+         Parser.Discount_Fenced_Code_Block (Renderer.Code_Block);
+
+         Parser.Pseudoprotocol_Link (Renderer.Anchor);
+         Parser.Pseudoprotocol_Abbr (Renderer.Abbreviation);
+         Parser.Pseudoprotocol_Class (Renderer.Span);
+         Parser.Pseudoprotocol_Id (Renderer.Anchor);
+         Parser.Pseudoprotocol_Raw (Renderer.Raw_Html_Span);
+
+         if Opt.Input_Format < Options.Special_Extended then
+            return;
+         end if;
+
+         Parser.Emphasis (Renderer.Deleted, 2, "-");
+         Parser.Emphasis (Renderer.Inserted, 2, "+");
+         Parser.Emphasis (Renderer.Span, 1, "|");
       end return;
    end Make_Parser;
 
@@ -290,6 +303,9 @@ procedure Markdown is
                  & "Set newline format.");
                Put_Line (Output, Indent & Indent
                  & "Allowed values: Autodetect, CR, LF, CR_LF, LF_CR");
+            when Options.Special_Extended_Input =>
+               Put_Line (Output, Indent & Indent
+                 & "Enable Discount and special extensions in input");
             when Options.Xhtml_Output =>
                Put_Line (Output, Indent & Indent
                  & "Output XHTML-style self-closing tags (e.g. <br />)");
