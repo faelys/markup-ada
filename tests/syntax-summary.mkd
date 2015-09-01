@@ -260,3 +260,14 @@ charater
     The line above is inside the code block, but not the line below.
 
     ~~~~~~~
+
+## Invented here and in `libsoldout`
+
+The following extensions are coming from my previous markdown library,
+`libsoldout`.
+
+* --Deleted-- text, delimited by emphasis-like pairs of `--`.
+
+* ++Inserted++ text, delimited by emphasis-like pairs of `++`.
+
+* |Plain `span`|, delimited by emphasis-like pairs of `|`.

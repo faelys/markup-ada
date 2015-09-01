@@ -32,7 +32,7 @@ test_mkd(){
 	    >"${GENERATED_DIR}/${NAME}.html"
 }
 
-test_mkd syntax-summary --html --discount
+test_mkd syntax-summary --html --special
 test_mkd corner-cases   --html --discount
 
 diff -Nur "${EXPECTED_DIR}" "${GENERATED_DIR}"
