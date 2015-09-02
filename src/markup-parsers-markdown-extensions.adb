@@ -27,6 +27,13 @@ package body Markup.Parsers.Markdown.Extensions is
    package Maps renames Ada.Strings.Maps;
 
 
+   Id_Charset : constant Maps.Character_Set := Maps."or"
+     (Maps.To_Set ("-_.:"),
+      Maps.To_Set (Maps.Character_Ranges'
+        (('a', 'z'), ('A', 'Z'), ('0', '9'))));
+      --  Characters allowed in HTML ids and classes
+
+
    ------------------------
    -- Helper subprograms --
    ------------------------
@@ -241,6 +248,21 @@ package body Markup.Parsers.Markdown.Extensions is
       Parser.Ext_Ref.Update.Data.all.Pseudo_Backend (Pseudoprotocol.Raw)
         := Element_Holders.To_Holder (Element);
    end Pseudoprotocol_Raw;
+
+
+   procedure Paragraph_With_Class
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Open_Marker, Close_Marker : in Character) is
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer
+        (Tokenizers.Paragraph_With_Class'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element),
+            Open_Marker => Open_Marker,
+            Close_Marker => Close_Marker));
+   end Paragraph_With_Class;
 
 
    overriding procedure Quote_Block
@@ -1497,6 +1519,103 @@ package body Markup.Parsers.Markdown.Extensions is
          else
             pragma Assert (Text.Last = Table_Last);
             Text.Clear;
+         end if;
+      end Process;
+
+
+
+      -------------------------------------
+      -- Paragraph with Class Indication --
+      -------------------------------------
+
+      overriding procedure Process
+        (Object : in out Paragraph_With_Class;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         package Sets renames Natools.String_Slices.Slice_Sets;
+
+         function Process_Line (S : in String) return Boolean;
+         --  Look for the first non-blank line after any blank line,
+         --  updating upper bounds of first non-blank and first blank parts.
+
+         Text_First : constant Positive := Text.First;
+         Content_Last : Natural := 0;
+         Blank_Last : Natural := 0;
+         Class_First : Positive := 1;
+         Class_Last : Natural := 0;
+
+         function Process_Line (S : in String) return Boolean is
+         begin
+            if Tools.Is_Blank (S) then
+               Blank_Last := S'Last;
+               return False;
+            else
+               if Content_Last = 0 then
+                  if S (S'First) /= Object.Open_Marker then
+                     return True;
+                  end if;
+
+                  Class_First := S'First + 1;
+
+                  Class_Last := Fixed.Index
+                    (Source => S,
+                     Set => Maps."or" (Id_Charset, Maps.To_Set (" ")),
+                     From => Class_First,
+                     Test => Ada.Strings.Outside);
+
+                  if Class_Last /= 0
+                    and then S (Class_Last) = Object.Close_Marker
+                  then
+                     Class_Last := Class_Last - 1;
+                  else
+                     Class_Last := 0;
+                     return True;
+                  end if;
+               end if;
+
+               if Blank_Last > 0 then
+                  return True;
+               else
+                  Content_Last := S'Last;
+                  return False;
+               end if;
+            end if;
+         end Process_Line;
+
+         Discarded : Natools.String_Slices.String_Range;
+      begin
+         Discarded := Text.Find_Slice (Process_Line'Access);
+         pragma Unreferenced (Discarded);
+
+         if Class_Last < Class_First then
+            return;
+         end if;
+
+         if Content_Last > 0 then
+            declare
+               Contents : Sets.Slice_Set
+                 := Text.Subset (Class_Last + 2, Content_Last);
+               Element : Element_Callback'Class := Object.Backend.Element;
+            begin
+               if Element in With_Identity'Class then
+                  Add_Class
+                    (With_Identity'Class (Element),
+                     Text.Subset (Class_First, Class_Last).To_Slice);
+               end if;
+
+               Element.Open;
+               Process_Spans (Object.State.Update.Data.all, Contents, Element);
+               Element.Close;
+            end;
+         end if;
+
+         if Blank_Last = 0 then
+            --  No blank line found, so its the last paragraph of the text
+            pragma Assert (Content_Last = Text.Last);
+            Text.Clear;
+         else
+            pragma Assert (Blank_Last > Content_Last);
+            Text.Exclude_Slice (Text_First, Blank_Last);
          end if;
       end Process;
 

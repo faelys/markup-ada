@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- Copyright (c) 2013, Natacha Porté                                        --
+-- Copyright (c) 2013-2015, Natacha Porté                                   --
 --                                                                          --
 -- Permission to use, copy, modify, and distribute this software for any    --
 -- purpose with or without fee is hereby granted, provided that the above   --
@@ -95,6 +95,14 @@ package Markup.Parsers.Markdown.Extensions is
    procedure Pseudoprotocol_Raw
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class);
+
+
+   procedure Paragraph_With_Class
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Open_Marker, Close_Marker : in Character);
+      --  Paragraph with a class indication in the first column of the first
+      --  line, between the given markers.
 
 
    overriding procedure Quote_Block
@@ -213,6 +221,15 @@ private
 
       overriding procedure Process
         (Object : in out PME_Table;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+
+      type Paragraph_With_Class is new Markdown.Tokenizers.Base with record
+         Open_Marker, Close_Marker : Character;
+      end record;
+
+      overriding procedure Process
+        (Object : in out Paragraph_With_Class;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
    end Tokenizers;
