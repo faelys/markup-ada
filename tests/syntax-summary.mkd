@@ -270,4 +270,7 @@ The following extensions are coming from my previous markdown library,
 
 * ++Inserted++ text, delimited by emphasis-like pairs of `++`.
 
+* (css-style special-paragraph)Paragraph with classes, given at the first
+column of the first line, between parentheses (`(` … `)`).
+
 * |Plain `span`|, delimited by emphasis-like pairs of `|`.

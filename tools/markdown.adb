@@ -262,6 +262,8 @@ procedure Markdown is
             return;
          end if;
 
+         Parser.Paragraph_With_Class (Renderer.Paragraph, '(', ')');
+
          Parser.Emphasis (Renderer.Deleted, 2, "-");
          Parser.Emphasis (Renderer.Inserted, 2, "+");
          Parser.Emphasis (Renderer.Span, 1, "|");
