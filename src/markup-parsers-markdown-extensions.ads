@@ -97,6 +97,16 @@ package Markup.Parsers.Markdown.Extensions is
       Element : in Element_Callback'Class);
 
 
+   procedure Atx_Header_With_Id
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Separator : in Character := '#';
+      Level_Max : in Positive := Positive'Last);
+      --  ATX-style header with an id given after the opening '#' sequence
+      --  finished by Separator, without any blank.
+      --  Example: `###level3_id# Level 3 Title with Id ###`
+
+
    procedure Paragraph_With_Class
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class;
@@ -104,6 +114,12 @@ package Markup.Parsers.Markdown.Extensions is
       --  Paragraph with a class indication in the first column of the first
       --  line, between the given markers.
 
+
+   overriding procedure Atx_Header
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Level_Max : in Positive := Positive'Last);
+      --  To ensure correct order with Atx_Header_With_Id
 
    overriding procedure Quote_Block
      (Parser : in out Extended_Parser;
@@ -221,6 +237,17 @@ private
 
       overriding procedure Process
         (Object : in out PME_Table;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
+
+
+      type Atx_Header_With_Id is new Markdown.Tokenizers.Base with
+      record
+         Level_Max : Positive;
+         Separator : Character;
+      end record;
+
+      overriding procedure Process
+        (Object : in out Atx_Header_With_Id;
          Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set);
 
 

@@ -250,6 +250,30 @@ package body Markup.Parsers.Markdown.Extensions is
    end Pseudoprotocol_Raw;
 
 
+   procedure Atx_Header_With_Id
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Separator : in Character := '#';
+      Level_Max : in Positive := Positive'Last)
+   is
+      function Check_Class (T : Tokenizer'Class) return Boolean;
+
+      function Check_Class (T : Tokenizer'Class) return Boolean is
+      begin
+         return T in Markdown.Tokenizers.Atx_Header'Class;
+      end Check_Class;
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer_Before
+        (Tokenizers.Atx_Header_With_Id'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element),
+            Separator => Separator,
+            Level_Max => Level_Max),
+         Check_Class'Access);
+   end Atx_Header_With_Id;
+
+
    procedure Paragraph_With_Class
      (Parser : in out Extended_Parser;
       Element : in Element_Callback'Class;
@@ -263,6 +287,28 @@ package body Markup.Parsers.Markdown.Extensions is
             Open_Marker => Open_Marker,
             Close_Marker => Close_Marker));
    end Paragraph_With_Class;
+
+
+   overriding procedure Atx_Header
+     (Parser : in out Extended_Parser;
+      Element : in Element_Callback'Class;
+      Level_Max : in Positive := Positive'Last)
+   is
+      function Check_Class (T : Tokenizer'Class) return Boolean;
+
+      function Check_Class (T : Tokenizer'Class) return Boolean is
+      begin
+         return T in Tokenizers.Atx_Header_With_Id'Class;
+      end Check_Class;
+   begin
+      Initialize_If_Needed (Parser.Ref);
+      Parser.Ref.Update.Data.Blocks.Add_Tokenizer_After
+        (Markdown.Tokenizers.Atx_Header'
+           (State => Parser.Ref,
+            Backend => Element_Holders.To_Holder (Element),
+            Level_Max => Level_Max),
+         Check_Class'Access);
+   end Atx_Header;
 
 
    overriding procedure Quote_Block
@@ -1520,6 +1566,108 @@ package body Markup.Parsers.Markdown.Extensions is
             pragma Assert (Text.Last = Table_Last);
             Text.Clear;
          end if;
+      end Process;
+
+
+
+      ---------------------------
+      -- ATX Header with an Id --
+      ---------------------------
+
+      overriding procedure Process
+        (Object : in out Atx_Header_With_Id;
+         Text   : in out Natools.String_Slices.Slice_Sets.Slice_Set)
+      is
+         Id : Natools.String_Slices.String_Range;
+         Text_First : constant Positive := Text.First;
+         Line_Last : Natural;
+         Position : Natural := Text_First;
+         Level : Natural := 0;
+         N : Natural;
+      begin
+         while Text.Element (Position) = '#' loop
+            Level := Level + 1;
+            Text.Next (Position);
+            if Position = 0 then
+               return;
+            end if;
+            exit when Level >= Object.Level_Max;
+         end loop;
+
+         if Level = 0 then
+            return;
+         end if;
+
+         N := Text.Index (Id_Charset, Position, Ada.Strings.Outside);
+         if N <= Position or else Text.Element (N) /= Object.Separator then
+            return;
+         else
+            Id := Natools.String_Slices.To_Range (Position, N - 1);
+            Position := N + 1;
+         end if;
+
+         N := Text.Index (Tools.Blanks, Position, Ada.Strings.Outside);
+         if N = 0 then
+            return;
+         else
+            Position := N;
+         end if;
+
+         N := Text.Index (Tools.Eols, Position);
+         if N = 0 then
+            N := Text.Last;
+            Line_Last := Text.Last;
+         else
+            Line_Last := Text.Index (Tools.Blanks, N, Ada.Strings.Outside);
+
+            if Line_Last > 0 then
+               Line_Last := Text.Index
+                 (Tools.Eols, Line_Last, Going => Ada.Strings.Backward);
+               pragma Assert (Line_Last /= 0);
+            else
+               Line_Last := Text.Last;
+            end if;
+         end if;
+
+         N := Text.Index (Tools.Blanks, N,
+                          Ada.Strings.Outside, Ada.Strings.Backward);
+         if N < Position then
+            return;
+         end if;
+
+         N := Text.Index (Maps.To_Set ('#'), N,
+                          Ada.Strings.Outside, Ada.Strings.Backward);
+         if N < Position then
+            return;
+         end if;
+
+         N := Text.Index (Tools.Blanks, N,
+                          Ada.Strings.Outside, Ada.Strings.Backward);
+         if N < Position then
+            return;
+         end if;
+
+         declare
+            Contents : Natools.String_Slices.Slice_Sets.Slice_Set
+              := Text.Subset (Position, N);
+            Element : Element_Callback'Class := Object.Backend.Element;
+         begin
+            if Id.Length > 0 and then Element in With_Identity'Class then
+               Set_Id
+                 (With_Identity'Class (Element),
+                  Text.Subset (Id).To_Slice);
+            end if;
+
+            if Element in With_Level'Class then
+               Set_Level (With_Level'Class (Element), Level);
+            end if;
+
+            Element.Open;
+            Process_Spans (Object.State.Update.Data.all, Contents, Element);
+            Element.Close;
+         end;
+
+         Text.Exclude_Slice (Text_First, Line_Last);
       end Process;
 
 
