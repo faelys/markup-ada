@@ -261,10 +261,14 @@ charater
 
     ~~~~~~~
 
-## Invented here and in `libsoldout`
+##special# Invented here and in `libsoldout`
 
 The following extensions are coming from my previous markdown library,
 `libsoldout`.
+
+* ATX-style header with id, as in the previous header, with the id immediately
+after the leading hash symbols (`#`) and followed immediately by a single
+hash symbol.
 
 * --Deleted-- text, delimited by emphasis-like pairs of `--`.
 

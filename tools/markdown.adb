@@ -262,6 +262,7 @@ procedure Markdown is
             return;
          end if;
 
+         Parser.Atx_Header_With_Id (Renderer.Header);
          Parser.Paragraph_With_Class (Renderer.Paragraph, '(', ')');
 
          Parser.Emphasis (Renderer.Deleted, 2, "-");
