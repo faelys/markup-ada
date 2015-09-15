@@ -856,6 +856,14 @@ package body Markup.Parsers.Markdown is
    end Process;
 
 
+   procedure Reset (Parser : in out Markdown_Parser) is
+      Mutator : constant State_Refs.Mutator := Parser.Ref.Update;
+   begin
+      Mutator.Level := 1;
+      Mutator.Link_Map.Clear;
+   end Reset;
+
+
 
    --------------------
    -- Lexer elements --

@@ -50,6 +50,9 @@ package Markup.Parsers.Markdown is
       Text : in Natools.String_Slices.Slice);
    --  Wrapper around both passes.
 
+   procedure Reset (Parser : in out Markdown_Parser);
+   --  Clear internal state to re-use the parser with the same renderer
+
 
 
    --  Helper types
