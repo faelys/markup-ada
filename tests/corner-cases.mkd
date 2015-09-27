@@ -45,6 +45,10 @@ term2
 
 :   Single-block second description
 
+# Discount image without title but with size indication
+
+![alt text](http://example.com/img.png =150x100)
+
 # Fuzzy HTML comments
 
 None of those are valid HTML tags or comments:
