@@ -410,12 +410,12 @@ package body Markup.Parsers.Markdown.Extensions is
             end if;
 
             if Backend in With_Title'Class then
-               if Has_Size and then Last >= Text'First then
+               if not Has_Size then
+                  Set_Title (With_Title'Class (Backend), Title);
+               elsif Last >= Text'First then
                   Set_Title
                     (With_Title'Class (Backend),
                      Title.Subslice (Text'First, Last));
-               else
-                  Set_Title (With_Title'Class (Backend), Title);
                end if;
             end if;
          end Process;
