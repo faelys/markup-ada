@@ -49,6 +49,18 @@ term2
 
 ![alt text](http://example.com/img.png =150x100)
 
+# Discount class block with only one marker
+
+> 
+Paragraph inside a `blockquote` but only one marker
+one first line, which is blank.
+
+Top-level paragraph.
+
+> %css-style%
+Paragraph inside a `div` block with a class.
+Second line of the paragraph.
+
 # Fuzzy HTML comments
 
 None of those are valid HTML tags or comments:
