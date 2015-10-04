@@ -814,7 +814,7 @@ package body Markup.Parsers.Markdown.Extensions is
               := Text;
          begin
             Object.Backend.Update_Element (Add_Class'Access);
-            Processed_Text.Exclude_Slice (Class_First, Class_Last);
+            Processed_Text.Exclude_Slice (Class_First, Line_Last);
             Markdown.Tokenizers.Process
               (Markdown.Tokenizers.Quote_Block (Object),
                Processed_Text);
